@@ -1,4 +1,4 @@
-# Note that this is probably an overestimation.
+# Author: @googleson78
 {
   description = "Build dependencies for clc-stackage";
   inputs = {
