@@ -16,6 +16,10 @@ The procedure is as follows:
 2. Compile a patched GHC, say, `~/ghc/_build/stage1/bin/ghc`.
 3. `git clone https://github.com/Bodigrim/clc-stackage`, then `cd clc-stackage`.
 4. Run `cabal build -w ~/ghc/_build/stage1/bin/ghc --keep-going` and wait for a long time.
+  * On a recent Macbook Air it takes around 12 hours, YMMV.
+  * You can interrupt `cabal` at any time and rerun again later.
+  * Consider setting `--jobs` to retain free CPU cores for other tasks.
+  * Full build requires roughly 7 Gb of free disk space.
 5. If any packages fail to compile:
   * copy them locally using `cabal unpack`,
   * patch to confirm with your proposal,
