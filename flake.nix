@@ -39,6 +39,12 @@
           systemdMinimal
           elfutils
           xorg.libXext.dev
+          pango
+          glib
+          libxml2
+          numactl
+          protobuf
+          openal
         ];
       };
     };
