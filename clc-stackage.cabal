@@ -14,6 +14,9 @@ library
     exposed-modules:  Lib
     hs-source-dirs:   src
     default-language: Haskell2010
+    if os(darwin)
+      build-depends:
+          hfsevents ==0.1.6,
     build-depends:
              abstract-deque ==0.3,
              abstract-deque-tests ==0.3,
@@ -968,7 +971,6 @@ library
              hexpat ==0.20.13,
              hex-text ==0.1.0.6,
              hformat ==0.3.3.1,
-             hfsevents ==0.1.6,
              hgeometry ==0.14,
              hgeometry-combinatorial ==0.14,
              hidapi ==0.1.8,
@@ -1253,7 +1255,6 @@ library
              kmeans ==0.1.3,
              knob ==0.2,
              koji ==0.0.2,
-             krank ==0.2.3,
              l10n ==0.1.0.1,
              labels ==0.3.3,
              lackey ==2.0.0.2,

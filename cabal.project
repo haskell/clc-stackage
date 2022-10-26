@@ -1,7 +1,6 @@
 packages: .
 
 constraints:
-  hinotify < 0,
   hopenssl < 0,
   hsdns < 0,
   lmdb < 0,
