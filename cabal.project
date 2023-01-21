@@ -22,3 +22,7 @@ constraints:
 allow-newer:
   aura:bytestring,
   aura:time
+
+constraints: hlint +ghc-lib
+constraints: ghc-lib-parser-ex -auto
+constraints: stylish-haskell +ghc-lib
