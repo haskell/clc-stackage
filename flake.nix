@@ -45,6 +45,7 @@
           numactl
           protobuf
           openal
+          gmp
         ];
       };
     };
