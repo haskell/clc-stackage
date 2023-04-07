@@ -4,9 +4,9 @@ version:            0.1.0.0
 author:             Andrew Lelechenko
 maintainer:         andrew.lelechenko@gmail.com
 
--- Build with cabal build -w ghc-9.2.3 --keep-going
+-- Build with cabal build -w ghc-9.4.4 --keep-going
 --
--- Derived from https://www.stackage.org/nightly-2022-06-17/cabal.config
+-- Derived from https://www.stackage.org/nightly-2023-03-19/cabal.config
 -- minus packages which do not contain libraries,
 -- minus packages with system dependencies
 
