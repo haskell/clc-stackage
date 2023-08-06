@@ -19,55 +19,55 @@
 
       deps = with pkgs; [
         alsa-lib
+        blas
+        bzip2
         cabal-install
         clp
+        curl
+        elfutils
+        expat
+        file
         fribidi
+        glib
         glpk
+        gmp
         gtk2
+        icu
         jack2
+        lapack
         libdatrie
         libffi.dev
         libGL
+        libGLU
         libselinux
         libsepol
         libsodium
         libthai
-        util-linux
+        libxml2
+        lzlib
         mpfr
         nettle
+        numactl
+        openal
+        pango
+        pcre
         pcre2
-        zeromq
-        xorg.libX11
-        zlib
         pkg-config
+        protobuf
+        systemdMinimal
+        util-linux
+        xorg.libX11
+        xorg.libXau
         xorg.libXcursor
         xorg.libXdmcp
-        xorg.libXrandr
-        xorg.libXxf86vm
-        xorg.libXi
-        bzip2
-        curl
-        libGLU
-        xorg.libXau
-        xorg.libXinerama
-        blas
-        pcre
-        icu
-        lzlib
-        xz
-        lapack
-        expat
-        file
-        systemdMinimal
-        elfutils
         xorg.libXext.dev
-        pango
-        glib
-        libxml2
-        numactl
-        protobuf
-        openal
-        gmp
+        xorg.libXinerama
+        xorg.libXrandr
+        xorg.libXi
+        xorg.libXxf86vm
+        xz
+        zeromq
+        zlib
       ];
     in
     {
