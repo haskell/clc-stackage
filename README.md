@@ -12,7 +12,7 @@ An impact assessment is due when
 
 The procedure is as follows:
 
-1. Rebase changes, mandated by your proposal, atop of `ghc-9.4` branch.
+1. Rebase changes, mandated by your proposal, atop of `ghc-9.6` branch.
 2. Compile a patched GHC, say, `~/ghc/_build/stage1/bin/ghc`.
 3. `git clone https://github.com/Bodigrim/clc-stackage`, then `cd clc-stackage`.
 4. Run `cabal build -w ~/ghc/_build/stage1/bin/ghc --keep-going` and wait for a long time.
