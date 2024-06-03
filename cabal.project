@@ -3,23 +3,27 @@ index-state: 2024-03-27T00:32:46Z
 packages: .
 
 constraints:
+  al < 0,
+  alsa-pcm < 0,
+  alsa-seq < 0,
+  ALUT < 0,
+  flac < 0,
+  hmatrix-gsl < 0,
   hopenssl < 0,
+  hpqtypes < 0,
   hsdns < 0,
+  hsndfile < 0,
+  hw-kafka-client < 0,
+  lame < 0,
+  lapack-ffi < 0,
   lmdb < 0,
   mysql < 0,
-  ALUT < 0,
-  pulse-simple < 0,
+  nfc < 0,
   postgresql-libpq < 0,
   pthread < 0,
-  al < 0,
-  hw-kafka-client < 0,
-  hsndfile < 0,
-  nfc < 0,
-  lame < 0,
-  flac < 0,
+  pulse-simple < 0,
   re2 < 0,
-  hmatrix-gsl < 0,
-  hpqtypes < 0
+  text-icu < 0,
 
 allow-newer:
   aura:bytestring,
