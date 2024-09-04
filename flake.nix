@@ -19,21 +19,13 @@
     # Note this means that this input should generally be upgraded whenever
     # ghc.nix is.
     ghc_nix = {
-      url = "github:alpmestan/ghc.nix";
+      url = "git+https://gitlab.haskell.org/ghc/ghc.nix.git";
       inputs.flake-compat.follows = "flake-compat";
     };
     nixpkgs.follows = "ghc_nix/nixpkgs";
 
-    # We use a newer version of nixpkgs for cabal-install, to avoid
-    # the warning:
-    #
-    #     Warning: Unknown/unsupported 'ghc' version detected (Cabal 3.10.1.0 supports
-    #     'ghc' version < 9.8)
-    #
-    # nixpkgs_new has cabal-install 3.10.2.1, which removes this warning.
-    #
-    # When ghc.nix's nixpkgs has this newer cabal, we can get rid of
-    # nixpkgs_new and use nixpkgs for everything.
+    # Temporarily include a newer version of nixpkgs so that we get the newer
+    # cabal-install 3.12 and can use jsem.
     nixpkgs_new.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
@@ -43,16 +35,14 @@
       pkgs = import nixpkgs {
         inherit system;
       };
-      pkgs_new = import nixpkgs_new { inherit system; };
+      pkgs_new = import nixpkgs_new {
+        inherit system;
+      };
       compiler = pkgs_new.haskell.packages.ghc982;
 
       # There are some packages that do not build well with nix:
       #
       # - grisette: Depends on sbv
-      #
-      # - hw-json-simd:
-      #   - https://github.com/haskell-works/hw-json-simd/issues/90
-      #   - https://github.com/haskell/core-libraries-committee/issues/158#issuecomment-1537226472
       #
       # - sbv: Builds with the nix-provided GHC in the .#with-ghc shell, but
       #        fails with a custom built GHC (e.g. building via ghc.nix).
@@ -66,10 +56,8 @@
         blas # blas-ffi
         bzip2 # bnb-staking-csvs
         expat # cairo-image
-        fftw # emd
         lapack # lapack-ffi
         libGL # GLUT, etc.
-        openssl # core-telemetry, cql-io
         pcre # regex-pcre
         xorg.libX11 # GLFW-b
         xorg.libXcursor # GLFW-b
@@ -83,35 +71,24 @@
       # The comments indicate haskell packages that require the given
       # dependency. This is not exhaustive.
       deps = with pkgs; [
-        alsa-lib # synthesizer-alsa
         pkgs_new.cabal-install
-        clp # coinor-clp
         curl # curl
-        file # magic requires libmagic
         fribidi # simple-pango
-        glib # alsa-seq
-        glpk # comfort-glpk
-        icu # text-icu
-        jack2 # jack
         libdatrie # simple-pango
         libGLU # GLURaw
         libselinux # simple-pango
         libsepol # simple-pango
-        libsodium # ihaskell
         libthai # simple-pango
         libxml2 # c14n
-        mpfr # hmpfr
         nettle # nettle
         openal # OpenAL
         pango # simple-pango
         pcre2 # simple-cairo
         pkg-config
-        primecount # primecount
         systemdMinimal # hidapi requires udev
         util-linux # simple-pango requires mount
         xorg.libXdmcp # simple-cairo
         xz # lzma
-        zeromq # zeromq4-haskell
       ] ++ ldDeps;
     in
     {
