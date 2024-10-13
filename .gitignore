@@ -1,1 +1,6 @@
+/bin
 /dist-newstyle
+/generated/cabal.project.local
+/generated/dist-newstyle
+/generated/generated.cabal
+/output

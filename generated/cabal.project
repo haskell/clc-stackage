@@ -1,0 +1,42 @@
+index-state: 2024-10-11T23:26:13Z
+
+-- should be an absolute path to your custom compiler
+--with-compiler: /home/ghc/_build/stage1/bin/ghc
+
+packages: .
+
+optimization: False
+
+allow-newer:
+  amazonka-apigatewaymanagementapi:base,
+  amazonka-appconfigdata:base,
+  amazonka-backupstorage:base,
+  amazonka-cloudhsm:base,
+  amazonka-controltower:base,
+  amazonka-core:base,
+  amazonka-ec2-instance-connect:base,
+  amazonka-finspace:base,
+  amazonka-forecastquery:base,
+  amazonka-importexport:base,
+  amazonka-iot-dataplane:base,
+  amazonka-iotfleethub:base,
+  amazonka-iotthingsgraph:base,
+  amazonka-kinesis-video-signaling:base,
+  amazonka-kinesis-video-webrtc-storage:base,
+  amazonka-marketplace-analytics:base,
+  amazonka-marketplace-metering:base,
+  amazonka-migrationhub-config:base,
+  amazonka-personalize-runtime:base,
+  amazonka-rbin:base,
+  amazonka-s3outposts:base,
+  amazonka-sagemaker-a2i-runtime:base,
+  amazonka-sagemaker-metrics:base,
+  amazonka-sso-oidc:base,
+  amazonka-worklink:base,
+  amazonka-workmailmessageflow:base,
+  aura:bytestring,
+  aura:time
+
+constraints: hlint +ghc-lib
+constraints: ghc-lib-parser-ex -auto
+constraints: stylish-haskell +ghc-lib

@@ -1,0 +1,48 @@
+{
+    "failures": [
+        {
+            "name": "p4",
+            "version": "1"
+        },
+        {
+            "name": "p5",
+            "version": "1"
+        }
+    ],
+    "untested": [
+        {
+            "name": "p6",
+            "version": "1"
+        },
+        {
+            "name": "p7",
+            "version": "1"
+        },
+        {
+            "name": "p8",
+            "version": "1"
+        }
+    ],
+    "successes": [
+        {
+            "name": "p1",
+            "version": "1"
+        },
+        {
+            "name": "p2",
+            "version": "1"
+        },
+        {
+            "name": "p3",
+            "version": "1"
+        },
+        {
+            "name": "p4",
+            "version": "1"
+        },
+        {
+            "name": "p5",
+            "version": "1"
+        }
+    ]
+}
