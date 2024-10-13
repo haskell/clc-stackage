@@ -1,0 +1,59 @@
+name: ci
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+  workflow_dispatch:
+jobs:
+  cabal:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - "macos-latest"
+          - "ubuntu-latest"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: "9.8.2"
+      - name: Configure
+        run: |
+          cabal configure --enable-tests --ghc-options -Werror
+
+      - name: Build executable
+        run: cabal build clc-stackage
+
+      - name: Unit Tests
+        id: unit
+        run: cabal test unit
+
+      - name: Print unit failures
+        if: ${{ failure() && steps.unit.conclusion == 'failure' }}
+        run: |
+          cd test/unit/goldens
+
+          for f in $(ls); do
+            echo "$f"
+            cat "$f"
+          done
+
+      - name: Functional Tests
+        id: functional
+        run: cabal test functional
+
+      - name: Print functional failures
+        if: ${{ failure() && steps.functional.conclusion == 'failure' }}
+        run: |
+          cd test/functional/goldens
+
+          for f in $(ls); do
+            echo "$f"
+            cat "$f"
+          done

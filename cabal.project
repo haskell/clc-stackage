@@ -1,44 +1,24 @@
-index-state: 2024-03-27T00:32:46Z
+index-state: 2024-10-11T23:26:13Z
 
 packages: .
 
-constraints:
-  al < 0,
-  alsa-pcm < 0,
-  alsa-seq < 0,
-  ALUT < 0,
-  btrfs < 0,
-  fft < 0,
-  flac < 0,
-  glpk-headers < 0,
-  hmatrix-gsl < 0,
-  hopenssl < 0,
-  hpqtypes < 0,
-  hsdns < 0,
-  hsndfile < 0,
-  HsOpenSSL < 0,
-  hw-kafka-client < 0,
-  jack < 0,
-  lame < 0,
-  lapack-ffi < 0,
-  lmdb < 0,
-  magic < 0,
-  mysql < 0,
-  nfc < 0,
-  pcre-light < 0,
-  postgresql-libpq < 0,
-  primecount < 0,
-  pthread < 0,
-  pulse-simple < 0,
-  rdtsc < 0,
-  regex-pcre < 0,
-  re2 < 0,
-  text-icu < 0,
+program-options
+  ghc-options:
+    -Wall -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies
+    -Wmissing-export-lists
+    -Wmissing-exported-signatures
+    -Wmissing-home-modules
+    -Wmissing-import-lists
+    -Wpartial-fields
+    -Wprepositive-qualified-module
+    -Wredundant-constraints
+    -Wunused-binds
+    -Wunused-packages
+    -Wunused-type-patterns
+    -Wno-unticked-promoted-constructors
 
-allow-newer:
-  aura:bytestring,
-  aura:time
-
-constraints: hlint +ghc-lib
-constraints: ghc-lib-parser-ex -auto
-constraints: stylish-haskell +ghc-lib
+optimization: 2

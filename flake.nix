@@ -24,8 +24,14 @@
     };
     nixpkgs.follows = "ghc_nix/nixpkgs";
 
-    # Temporarily include a newer version of nixpkgs so that we get the newer
-    # cabal-install 3.12 and can use jsem.
+    # Temporarily include a newer version of nixpkgs so that we can use GHC
+    # 9.8.2. This newer nixpkgs also contains cabal-install 3.12, which allows
+    # us to use the new --semaphore option, but unfortunately breaks Agda:
+    #
+    #     https://github.com/agda/agda/pull/7471
+    #
+    # Once we have the Agda fix (version 2.7.0.1), we can use cabal-install
+    # 3.12.
     nixpkgs_new.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
@@ -71,7 +77,7 @@
       # The comments indicate haskell packages that require the given
       # dependency. This is not exhaustive.
       deps = with pkgs; [
-        pkgs_new.cabal-install
+        cabal-install
         curl # curl
         fribidi # simple-pango
         libdatrie # simple-pango
@@ -85,6 +91,7 @@
         pango # simple-pango
         pcre2 # simple-cairo
         pkg-config
+        postgresql_16 # postgresql-libpq
         systemdMinimal # hidapi requires udev
         util-linux # simple-pango requires mount
         xorg.libXdmcp # simple-cairo
@@ -115,6 +122,16 @@
             #export PATH=/path/to/custom/ghc/stage1/bin/:$PATH
             ${throw "Remove this line from the flake.nix and add your GHC to the PATH"}
           '';
+        };
+
+        dev = pkgs.mkShell {
+          buildInputs = [
+            compiler.ghc
+            compiler.haskell-language-server
+            compiler.ormolu
+            pkgs.cabal-install
+            pkgs.zlib
+          ];
         };
 
         # This shell is useless wrt the intended purpose of this repo,
