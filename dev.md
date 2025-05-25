@@ -84,7 +84,7 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
     ```haskell
     -- CLC.Stackage.Parser.API
     stackageSnapshot :: String
-    stackageSnapshot = "nightly-2024-03-26"
+    stackageSnapshot = "nightly-yyyy-mm-dd"
     ```
 
 2. Update the `index-state` in [cabal.project](cabal.project) and [generated/cabal.project](generated/cabal.project).
