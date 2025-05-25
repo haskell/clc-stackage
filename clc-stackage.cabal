@@ -24,7 +24,7 @@ common common-lang
   if os(windows)
     cpp-options: -DWINDOWS
 
-  build-depends:      base >=4.16.0.0 && <4.21
+  build-depends:      base >=4.16.0.0 && <4.22
   default-language:   GHC2021
 
 library utils
@@ -61,7 +61,7 @@ library parser
   build-depends:
     , aeson
     , bytestring
-    , containers       >=0.6.3.1 && <0.8
+    , containers       >=0.6.3.1 && <0.9
     , filepath
     , http-client      >=0.5.9   && <0.8
     , http-client-tls  ^>=0.3

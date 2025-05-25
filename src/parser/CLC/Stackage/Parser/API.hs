@@ -31,6 +31,12 @@ getRequest = updateReq <$> mkReq
 stackageUrl :: String
 stackageUrl = "https://stackage.org/" <> stackageSnapshot
 
--- | Stackage snapshot.
+-- | Stackage snapshot. Note that picking a "good" snapshot is something of
+-- an art i.e. not all valid snapshots return json output at the
+-- expected endpoint. I essentially try snapshots with
+--
+--    curl -H "Accept: application/json" -L https://stackage.org/nightly-yyyy-mm-dd
+--
+-- until one returns json.
 stackageSnapshot :: String
-stackageSnapshot = "nightly-2024-03-26"
+stackageSnapshot = "nightly-2025-05-23"

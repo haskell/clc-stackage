@@ -12,7 +12,7 @@ An impact assessment is due when
 
 The procedure is as follows:
 
-1. Rebase changes, mandated by your proposal, atop of `ghc-9.8` branch.
+1. Rebase changes, mandated by your proposal, atop of `ghc-9.10` branch.
 
 2. Compile a patched GHC, say, `~/ghc/_build/stage1/bin/ghc`.
 

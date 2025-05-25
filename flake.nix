@@ -23,28 +23,15 @@
       inputs.flake-compat.follows = "flake-compat";
     };
     nixpkgs.follows = "ghc_nix/nixpkgs";
-
-    # Temporarily include a newer version of nixpkgs so that we can use GHC
-    # 9.8.2. This newer nixpkgs also contains cabal-install 3.12, which allows
-    # us to use the new --semaphore option, but unfortunately breaks Agda:
-    #
-    #     https://github.com/agda/agda/pull/7471
-    #
-    # Once we have the Agda fix (version 2.7.0.1), we can use cabal-install
-    # 3.12.
-    nixpkgs_new.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs, nixpkgs_new, ... }:
+  outputs = { self, nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
       };
-      pkgs_new = import nixpkgs_new {
-        inherit system;
-      };
-      compiler = pkgs_new.haskell.packages.ghc982;
+      compiler = pkgs.haskell.packages.ghc9101;
 
       # There are some packages that do not build well with nix:
       #
@@ -84,9 +71,11 @@
         libGLU # GLURaw
         libselinux # simple-pango
         libsepol # simple-pango
+        libsodium # libsodium-bindings
         libthai # simple-pango
         libxml2 # c14n
         nettle # nettle
+        nlopt # srtree
         openal # OpenAL
         pango # simple-pango
         pcre2 # simple-cairo
