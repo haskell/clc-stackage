@@ -45,14 +45,16 @@ import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
 import Control.Monad (unless)
+import Data.Bool (Bool (True, False), not)
 import Data.Foldable (Foldable (foldl'))
 import Data.IORef (newIORef, readIORef)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe (Just, Nothing), maybe, fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Time (LocalTime)
+import Prelude (IO, (.), ($), pure, show, mconcat, (<>), (<$>), (++))
 import System.Console.Pretty (supportsPretty)
 import System.Directory.OsPath qualified as Dir
 import System.Exit (ExitCode (ExitSuccess))
