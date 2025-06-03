@@ -22,7 +22,8 @@ import System.Environment.Guard.Lifted (ExpectEnv (ExpectEnvSet))
 import System.OsPath (OsPath, osp, (</>))
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty qualified as Tasty
-import Test.Tasty.Golden (DeleteOutputFile (OnPass), goldenVsFile)
+import Test.Tasty.Golden (DeleteOutputFile (OnPass))
+import Test.Utils (goldenDiffCustom)
 
 main :: IO ()
 main =
@@ -130,22 +131,23 @@ data GoldenParams = MkGoldenParams
   }
 
 runGolden :: IO Bool -> GoldenParams -> TestTree
-runGolden getNoCleanup params = goldenVsFile params.testDesc goldenFilePath actualFilePath $ do
-  -- we always need to cleanup the cache prior to a run so that the generated cache from
-  -- a previous run does not interfere
-  IO.removeFileIfExists Paths.cachePath
+runGolden getNoCleanup params =
+  goldenDiffCustom params.testDesc goldenFilePath actualFilePath $ do
+    -- we always need to cleanup the cache prior to a run so that the generated
+    -- cache from a previous run does not interfere
+    IO.removeFileIfExists Paths.cachePath
 
-  -- While NOTE: [Skipping cleanup] will prevent the test cleanup from running,
-  -- the clc-stackage also performs a cleanup. Thus if no cleanup is desired
-  -- (NO_CLEANUP is set), we also need to pass the --no-cleanup arg to the
-  -- exe.
-  noCleanup <- getNoCleanup
-  let noCleanupArgs = ["--no-cleanup" | noCleanup]
-      finalArgs = args' ++ noCleanupArgs
+    -- While NOTE: [Skipping cleanup] will prevent the test cleanup from running,
+    -- the clc-stackage also performs a cleanup. Thus if no cleanup is desired
+    -- (NO_CLEANUP is set), we also need to pass the --no-cleanup arg to the
+    -- exe.
+    noCleanup <- getNoCleanup
+    let noCleanupArgs = ["--no-cleanup" | noCleanup]
+        finalArgs = args' ++ noCleanupArgs
 
-  logs <- withArgs finalArgs params.runner
+    logs <- withArgs finalArgs params.runner
 
-  writeActualFile $ toBS logs
+    writeActualFile $ toBS logs
   where
     -- test w/ color off since CI can't handle it, apparently
     args' = "--color-logs" : "off" : params.args

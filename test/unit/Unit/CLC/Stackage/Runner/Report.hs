@@ -63,7 +63,7 @@ testMkReport = testCase "Creates a report" $ do
         }
 
 testResultJsonEncode :: TestTree
-testResultJsonEncode = goldenVsFile desc goldenFilePath actualFilePath $ do
+testResultJsonEncode = goldenDiffCustom desc goldenFilePath actualFilePath $ do
   let json = JSON.encodePretty results <> "\n"
 
   IO.writeBinaryFile actualOsPath json
@@ -82,7 +82,7 @@ testResultJsonEncode = goldenVsFile desc goldenFilePath actualFilePath $ do
         }
 
 testReportJsonEncode :: TestTree
-testReportJsonEncode = goldenVsFile desc goldenFilePath actualFilePath $ do
+testReportJsonEncode = goldenDiffCustom desc goldenFilePath actualFilePath $ do
   let json = JSON.encodePretty report <> "\n"
 
   IO.writeBinaryFile actualOsPath json

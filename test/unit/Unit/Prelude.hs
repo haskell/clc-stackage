@@ -38,8 +38,8 @@ import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Data.Time.LocalTime (LocalTime (LocalTime), midday)
 import Test.Tasty as X (TestTree, testGroup)
-import Test.Tasty.Golden as X (goldenVsFile)
 import Test.Tasty.HUnit as X (assertFailure, testCase, (@=?))
+import Test.Utils as X (goldenDiffCustom)
 
 mkRunnerEnv :: IO RunnerEnv
 mkRunnerEnv = do
