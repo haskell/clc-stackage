@@ -128,6 +128,18 @@ executable clc-stackage
   hs-source-dirs: ./app
   ghc-options:    -threaded -with-rtsopts=-N
 
+library test-utils
+  import:          common-lang
+  exposed-modules:
+    Test.Utils
+
+  build-depends:
+    , base
+    , tasty         >=1.1.0.3  && <1.6
+    , tasty-golden  ^>=2.3.1.1
+
+  hs-source-dirs:  test/utils
+
 test-suite unit
   import:         common-lang
   type:           exitcode-stdio-1.0
@@ -143,9 +155,10 @@ test-suite unit
     , containers
     , filepath
     , runner
-    , tasty         >=1.1.0.3  && <1.6
-    , tasty-golden  ^>=2.3.1.1
+    , tasty
+    , tasty-golden
     , tasty-hunit   >=0.9      && <0.11
+    , test-utils
     , time
     , utils
 
@@ -164,6 +177,7 @@ test-suite functional
     , env-guard     ^>=0.2
     , filepath
     , runner
+    , test-utils
     , tasty
     , tasty-golden
     , text
