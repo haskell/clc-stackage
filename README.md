@@ -1,5 +1,7 @@
 # `clc-stackage`
 
+[![ci](https://github.com/haskell/clc-stackage/actions/workflows/ci.yaml/badge.svg)](https://github.com/haskell/clc-stackage/actions/workflows/ci.yaml)
+
 ## How to?
 
 This is a meta-package to facilitate impact assessment for [CLC proposals](https://github.com/haskell/core-libraries-committee).
