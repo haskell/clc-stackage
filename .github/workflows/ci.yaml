@@ -8,6 +8,12 @@ on:
     branches:
       - master
 
+  schedule:
+    # Every day at 00:00 UTC.
+    #
+    # https://crontab.guru
+    - cron: '0 0 * * *'
+
   workflow_dispatch:
 jobs:
   cabal:
