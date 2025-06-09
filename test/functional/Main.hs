@@ -6,6 +6,7 @@ import CLC.Stackage.Builder.Package (Package (name))
 import CLC.Stackage.Runner qualified as Runner
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.OS (Os (Windows), currentOs)
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as C8
@@ -152,9 +153,14 @@ runGolden getNoCleanup params =
     -- test w/ color off since CI can't handle it, apparently
     args' = "--color-logs" : "off" : params.args
 
-    actualOsPath = goldensDir </> params.testName <> [osp|.actual|]
+    baseTestPath =
+      goldensDir
+        </> params.testName
+        <> ext
+
+    actualOsPath = baseTestPath <> [osp|.actual|]
     actualFilePath = Paths.unsafeDecodeUtf actualOsPath
-    goldenFilePath = Paths.unsafeDecodeUtf $ goldensDir </> params.testName <> [osp|.golden|]
+    goldenFilePath = Paths.unsafeDecodeUtf $ baseTestPath <> [osp|.golden|]
 
     toBS = C8.unlines
 
@@ -163,3 +169,8 @@ runGolden getNoCleanup params =
 
 goldensDir :: OsPath
 goldensDir = [osp|test|] </> [osp|functional|] </> [osp|goldens|]
+
+ext :: OsPath
+ext = case currentOs of
+  Windows -> [osp|_windows|]
+  _ -> [osp|_posix|]
