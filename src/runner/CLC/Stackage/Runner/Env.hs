@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module CLC.Stackage.Runner.Env
   ( RunnerEnv (..),
     setup,
@@ -40,6 +42,7 @@ import CLC.Stackage.Runner.Args
 import CLC.Stackage.Runner.Args qualified as Args
 import CLC.Stackage.Runner.Report (Results (MkResults))
 import CLC.Stackage.Runner.Report qualified as Report
+import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.Paths qualified as Paths
@@ -49,7 +52,7 @@ import Data.Bool (Bool (False, True), not)
 import Data.Foldable (Foldable (foldl'))
 import Data.IORef (newIORef, readIORef)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Maybe (Maybe (Just, Nothing), fromMaybe, maybe)
+import Data.Maybe (Maybe (Just, Nothing), fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -57,7 +60,9 @@ import Data.Time (LocalTime)
 import System.Console.Pretty (supportsPretty)
 import System.Directory.OsPath qualified as Dir
 import System.Exit (ExitCode (ExitSuccess))
-import Prelude (IO, mconcat, pure, show, ($), (++), (.), (<$>), (<>))
+import System.OsPath (osp)
+import System.OsPath qualified as OsP
+import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (++), (.), (<$>), (<>))
 
 -- | Args used for building all packages.
 data RunnerEnv = MkRunnerEnv
@@ -90,17 +95,21 @@ setup hLogger modifyPackages = do
 
   -- Set up build args for cabal, filling in missing defaults
   let buildArgs =
-        ["build"]
-          ++ cabalVerboseArg
-          ++ jobsArg
-          ++ keepGoingArg
-
-      cabalVerboseArg = toArgs Builder.Env.cabalVerbosityToArg cliArgs.cabalVerbosity
-      jobsArg = toArgs Builder.Env.jobsToArg cliArgs.jobs
+        "build"
+          : keepGoingArg
+          ++ cliArgs.cabalOpts
 
       -- when packageFailFast is false, add keep-going so that we build as many
       -- packages in the group.
       keepGoingArg = ["--keep-going" | not cliArgs.packageFailFast]
+
+  let cabalPathRaw = fromMaybe [osp|cabal|] cliArgs.cabalPath
+  cabalPath <-
+    Dir.findExecutable cabalPathRaw >>= \case
+      -- TODO: It would be nice to avoid the decode here and keep everything
+      -- in OsPath, though that is blocked until process support OsPath.
+      Just p -> OsP.decodeUtf p
+      Nothing -> Ex.throwText "Cabal not found"
 
   successesRef <- newIORef Set.empty
   failuresRef <- newIORef Set.empty
@@ -158,6 +167,7 @@ setup hLogger modifyPackages = do
         MkBuildEnv
           { batch = cliArgs.batch,
             buildArgs,
+            cabalPath,
             colorLogs,
             groupFailFast = cliArgs.groupFailFast,
             hLogger,
@@ -186,9 +196,6 @@ setup hLogger modifyPackages = do
         { name = p.name,
           version = p.version
         }
-
-    toArgs :: (a -> b) -> Maybe a -> [b]
-    toArgs f = maybe [] (\x -> [f x])
 
 -- | Prints summary and writes results to disk.
 teardown :: RunnerEnv -> IO ()

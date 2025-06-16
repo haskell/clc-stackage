@@ -1,10 +1,6 @@
 -- | Provides the environment for building.
 module CLC.Stackage.Builder.Env
   ( BuildEnv (..),
-    CabalVerbosity (..),
-    cabalVerbosityToArg,
-    Jobs (..),
-    jobsToArg,
     Progress (..),
     WriteLogs (..),
   )
@@ -15,40 +11,6 @@ import CLC.Stackage.Utils.Logging qualified as Logging
 import Data.IORef (IORef)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set (Set)
-import Data.Word (Word8)
-
--- | Cabal's --verbose flag
-data CabalVerbosity
-  = -- | V0
-    CabalVerbosity0
-  | -- | V1
-    CabalVerbosity1
-  | -- | V2
-    CabalVerbosity2
-  | -- | V3
-    CabalVerbosity3
-  deriving stock (Eq, Show)
-
-cabalVerbosityToArg :: CabalVerbosity -> String
-cabalVerbosityToArg CabalVerbosity0 = "--verbose=0"
-cabalVerbosityToArg CabalVerbosity1 = "--verbose=1"
-cabalVerbosityToArg CabalVerbosity2 = "--verbose=2"
-cabalVerbosityToArg CabalVerbosity3 = "--verbose=3"
-
--- | Number of build jobs.
-data Jobs
-  = -- | Literal number of jobs.
-    JobsN Word8
-  | -- | String "$ncpus"
-    JobsNCpus
-  | -- | Job semaphore. Requires GHC 9.8 and Cabal 3.12
-    JobsSemaphore
-  deriving stock (Eq, Show)
-
-jobsToArg :: Jobs -> String
-jobsToArg (JobsN n) = "--jobs=" ++ show n
-jobsToArg JobsNCpus = "--jobs=$ncpus"
-jobsToArg JobsSemaphore = "--semaphore"
 
 data Progress = MkProgress
   { -- | Dependencies that built successfully.
@@ -74,6 +36,8 @@ data BuildEnv = MkBuildEnv
     batch :: Maybe Int,
     -- | Build arguments for cabal.
     buildArgs :: [String],
+    -- | Optional path to cabal executable.
+    cabalPath :: FilePath,
     -- | If true, colors logs.
     colorLogs :: Bool,
     -- | If true, the first group that fails to completely build stops

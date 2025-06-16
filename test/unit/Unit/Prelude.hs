@@ -10,6 +10,7 @@ import CLC.Stackage.Builder.Env
       ( MkBuildEnv,
         batch,
         buildArgs,
+        cabalPath,
         colorLogs,
         groupFailFast,
         hLogger,
@@ -65,6 +66,7 @@ mkBuildEnv = do
     MkBuildEnv
       { batch = Nothing,
         buildArgs = [],
+        cabalPath = "cabal",
         colorLogs = True,
         groupFailFast = False,
         hLogger =
