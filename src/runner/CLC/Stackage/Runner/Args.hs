@@ -6,15 +6,9 @@ module CLC.Stackage.Runner.Args
 where
 
 import CLC.Stackage.Builder.Env
-  ( CabalVerbosity
-      ( CabalVerbosity0,
-        CabalVerbosity1,
-        CabalVerbosity2,
-        CabalVerbosity3
-      ),
-    Jobs (JobsN, JobsNCpus, JobsSemaphore),
-    WriteLogs (WriteLogsCurrent, WriteLogsNone, WriteLogsSaveFailures),
+  ( WriteLogs (WriteLogsCurrent, WriteLogsNone, WriteLogsSaveFailures),
   )
+import Data.String qualified as Str
 import Options.Applicative
   ( Mod,
     Parser,
@@ -35,7 +29,8 @@ import Options.Applicative.Help.Chunk (Chunk (Chunk))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
 import Options.Applicative.Types (ArgPolicy (Intersperse))
-import Text.Read qualified as TR
+import System.OsPath (OsPath)
+import System.OsPath qualified as OsP
 
 -- | Log coloring option.
 data ColorLogs
@@ -49,16 +44,16 @@ data Args = MkArgs
   { -- | If given, batches packages together so we build more than one.
     -- Defaults to batching everything together in the same group.
     batch :: Maybe Int,
-    -- | Cabal's --verbosity flag.
-    cabalVerbosity :: Maybe CabalVerbosity,
+    -- | Options to pass to cabal e.g. --semaphore.
+    cabalOpts :: [String],
+    -- | Optional path to cabal executable.
+    cabalPath :: Maybe OsPath,
     -- | Determines if we color the logs. If 'Nothing', attempts to detect
     -- if colors are supported.
     colorLogs :: ColorLogs,
     -- | If true, the first group that fails to completely build stops
     -- clc-stackage.
     groupFailFast :: Bool,
-    -- | Number of build jobs.
-    jobs :: Maybe Jobs,
     -- | Disables the cache, which otherwise saves the outcome of a run in a
     -- json file. The cache is used for resuming a run that was interrupted.
     noCache :: Bool,
@@ -119,10 +114,10 @@ parseCliArgs :: Parser Args
 parseCliArgs =
   ( do
       batch <- parseBatch
-      cabalVerbosity <- parseCabalVerbosity
+      cabalOpts <- parseCabalOpts
+      cabalPath <- parseCabalPath
       colorLogs <- parseColorLogs
       groupFailFast <- parseGroupFailFast
-      jobs <- parseJobs
       noCache <- parseNoCache
       noCleanup <- parseNoCleanup
       packageFailFast <- parsePackageFailFast
@@ -132,10 +127,10 @@ parseCliArgs =
       pure $
         MkArgs
           { batch,
-            cabalVerbosity,
+            cabalOpts,
+            cabalPath,
             colorLogs,
             groupFailFast,
-            jobs,
             noCache,
             noCleanup,
             packageFailFast,
@@ -164,27 +159,37 @@ parseBatch =
           ]
       )
 
-parseCabalVerbosity :: Parser (Maybe CabalVerbosity)
-parseCabalVerbosity =
+parseCabalOpts :: Parser [String]
+parseCabalOpts =
+  OA.option
+    readOpts
+    ( mconcat
+        [ OA.long "cabal-options",
+          OA.metavar "ARGS...",
+          OA.value [],
+          mkHelp "Quoted arguments to pass to cabal e.g. '--semaphore --verbose=1'"
+        ]
+    )
+  where
+    readOpts = Str.words <$> OA.str
+
+parseCabalPath :: Parser (Maybe OsPath)
+parseCabalPath =
   OA.optional $
     OA.option
-      readCabalVerbosity
+      readOsPath
       ( mconcat
-          [ OA.long "cabal-verbosity",
-            OA.metavar "(0 | 1 | 2 | 3)",
-            mkHelp
-              "Cabal's --verbose flag. Uses cabal's default if not given (1)."
+          [ OA.long "cabal-path",
+            OA.metavar "PATH",
+            mkHelp "Optional path to cabal executable."
           ]
       )
   where
-    readCabalVerbosity =
-      OA.str >>= \case
-        "0" -> pure CabalVerbosity0
-        "1" -> pure CabalVerbosity1
-        "2" -> pure CabalVerbosity2
-        "3" -> pure CabalVerbosity3
-        other ->
-          fail $ "Expected one of (0 | 1 | 2 | 3), received: " ++ other
+    readOsPath = do
+      fp <- OA.str
+      case OsP.encodeUtf fp of
+        Just osp -> pure osp
+        Nothing -> fail $ "Failed encoding to ospath: " ++ fp
 
 parseColorLogs :: Parser ColorLogs
 parseColorLogs =
@@ -219,44 +224,6 @@ parseGroupFailFast =
         [ "If true, the first group that fails to completely build stops ",
           "clc-stackage."
         ]
-
-parseJobs :: Parser (Maybe Jobs)
-parseJobs =
-  OA.optional $
-    OA.option
-      readJobs
-      ( mconcat
-          [ OA.short 'j',
-            OA.long "jobs",
-            OA.metavar "(NAT | $ncpus | semaphore)",
-            mkHelp $
-              mconcat
-                [ "Controls the number of build jobs i.e. the flag passed to ",
-                  "cabal's --jobs option. Can be a natural number in [1, 255] ",
-                  "or the literal string '$ncpus', meaning all cpus. The ",
-                  "literal 'semaphore' will instead use cabal's --semaphore ",
-                  "option. This requires GHC 9.8+ and Cabal 3.12+. No option ",
-                  "uses cabal's default i.e. $ncpus."
-                ]
-          ]
-      )
-  where
-    readJobs =
-      OA.str >>= \case
-        "$ncpus" -> pure JobsNCpus
-        "semaphore" -> pure JobsSemaphore
-        other -> case TR.readMaybe @Int other of
-          Just n ->
-            if n > 0 && n < 256
-              then pure $ JobsN $ fromIntegral n
-              else fail $ "Expected NAT in [1, 255], received: " ++ other
-          Nothing ->
-            fail $
-              mconcat
-                [ "Expected one of (NAT in [1, 255] | $ncpus | semaphore), ",
-                  "received: ",
-                  other
-                ]
 
 parseNoCache :: Parser Bool
 parseNoCache =

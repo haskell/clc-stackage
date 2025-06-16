@@ -8,7 +8,8 @@ where
 import CLC.Stackage.Builder.Batch (PackageGroup (unPackageGroup))
 import CLC.Stackage.Builder.Env
   ( BuildEnv
-      ( colorLogs,
+      ( cabalPath,
+        colorLogs,
         groupFailFast,
         hLogger,
         progress,
@@ -45,7 +46,7 @@ buildProject env idx pkgs = do
   let buildNoLogs :: IO ExitCode
       buildNoLogs =
         withGeneratedDir $
-          (\(ec, _, _) -> ec) <$> P.readProcessWithExitCode "cabal" env.buildArgs ""
+          (\(ec, _, _) -> ec) <$> P.readProcessWithExitCode env.cabalPath env.buildArgs ""
 
       buildLogs :: Bool -> IO ExitCode
       buildLogs saveFailures = do
@@ -53,7 +54,7 @@ buildProject env idx pkgs = do
 
         IO.withBinaryFileWriteMode stdoutPath $ \stdoutHandle ->
           IO.withBinaryFileWriteMode stderrPath $ \stderrHandle -> do
-            let createProc = P.proc "cabal" env.buildArgs
+            let createProc = P.proc env.cabalPath env.buildArgs
                 createProc' =
                   createProc
                     { P.std_out = P.UseHandle stdoutHandle,
