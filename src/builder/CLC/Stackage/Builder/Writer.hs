@@ -5,9 +5,9 @@ module CLC.Stackage.Builder.Writer
 where
 
 import CLC.Stackage.Builder.Batch (PackageGroup (unPackageGroup))
-import CLC.Stackage.Builder.Package (Package)
-import CLC.Stackage.Builder.Package qualified as Package
 import CLC.Stackage.Utils.IO qualified as IO
+import CLC.Stackage.Utils.Package (Package)
+import CLC.Stackage.Utils.Package qualified as Package
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
@@ -33,7 +33,7 @@ writeCabalProjectLocal pkgs = IO.writeBinaryFile path constraintsSrc
     path = Paths.generatedCabalProjectLocalPath
     constraintsSrc = TEnc.encodeUtf8 constraintsTxt
     constraintsTxt = T.unlines $ "constraints:" : constraints
-    constraints = (\p -> "  " <> Package.toText p <> ",") <$> pkgs
+    constraints = (\p -> "  " <> Package.toCabalConstraintsText p) <$> pkgs
 
 -- | Writes the package set to a cabal file for building. This will be called
 -- for each group we want to build.
@@ -60,7 +60,7 @@ mkCabalFile pkgs =
            "    default-language: Haskell2010"
          ]
   where
-    pkgsTxt = (\p -> pkgsIndent <> Package.toDepText p) <$> NE.toList pkgs.unPackageGroup
+    pkgsTxt = (\p -> pkgsIndent <> Package.toCabalDepText p) <$> NE.toList pkgs.unPackageGroup
 
 -- build-depends is indented 4, then 2 for the package itself.
 pkgsIndent :: Text

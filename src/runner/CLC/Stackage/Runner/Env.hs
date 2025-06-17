@@ -28,9 +28,7 @@ import CLC.Stackage.Builder.Env
       ),
   )
 import CLC.Stackage.Builder.Env qualified as Builder.Env
-import CLC.Stackage.Builder.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Parser qualified as Parser
-import CLC.Stackage.Parser.API (PackageResponse (name, version))
 import CLC.Stackage.Runner.Args
   ( Args (snapshotPath),
     ColorLogs
@@ -45,6 +43,7 @@ import CLC.Stackage.Runner.Report qualified as Report
 import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
 import Control.Monad (unless)

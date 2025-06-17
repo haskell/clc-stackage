@@ -2,7 +2,6 @@
 module CLC.Stackage.Parser.API.Common
   ( -- * Types
     StackageResponse (..),
-    PackageResponse (..),
 
     -- * Exception
     StackageException (..),
@@ -13,13 +12,13 @@ module CLC.Stackage.Parser.API.Common
   )
 where
 
+import CLC.Stackage.Utils.Package (Package)
 import Control.DeepSeq (NFData)
 import Control.Exception
   ( Exception (displayException),
     SomeException,
   )
 import Data.ByteString (ByteString)
-import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import GHC.Generics (Generic)
 import Network.HTTP.Client (Response)
@@ -29,15 +28,7 @@ import Network.HTTP.Types.Status qualified as Status
 
 -- | Stackage response. This type unifies different stackage responses.
 newtype StackageResponse = MkStackageResponse
-  { packages :: [PackageResponse]
-  }
-  deriving stock (Eq, Generic, Show)
-  deriving anyclass (NFData)
-
--- | Package in a stackage snapshot.
-data PackageResponse = MkPackageResponse
-  { name :: Text,
-    version :: Text
+  { packages :: [Package]
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)

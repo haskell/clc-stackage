@@ -10,7 +10,7 @@ import CLC.Stackage.Builder.Env
         packagesToBuild
       ),
   )
-import CLC.Stackage.Builder.Package (Package)
+import CLC.Stackage.Utils.Package (Package)
 import Data.Bifunctor (Bifunctor (first))
 import Data.List qualified as L
 import Data.List.NonEmpty (NonEmpty ((:|)), (<|))

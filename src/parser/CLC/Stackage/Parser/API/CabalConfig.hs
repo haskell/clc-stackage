@@ -13,25 +13,22 @@ import CLC.Stackage.Parser.API.Common
         ReasonReadBody,
         ReasonStatus
       ),
-    PackageResponse
-      ( MkPackageResponse,
-        name,
-        version
-      ),
     StackageException (MkStackageException),
     StackageResponse (MkStackageResponse),
     getStatusCode,
   )
 import CLC.Stackage.Utils.Exception qualified as Ex
+import CLC.Stackage.Utils.Package qualified as Package
 import Control.Exception (throwIO)
 import Control.Monad (when)
-import Data.List qualified as L
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
 import Network.HTTP.Client (BodyReader, Manager, Request, Response)
 import Network.HTTP.Client qualified as HttpClient
+import Text.Megaparsec qualified as MP
+import Text.Megaparsec.Char qualified as MPC
 
 -- | Given http manager and snapshot string, queries the cabal config
 -- endpoint. This is intended as a backup, for when the primary endpoint fails.
@@ -80,45 +77,13 @@ parseCabalConfig =
     . fmap parseCabalConfigLine
     . T.lines
 
--- | Parses a line like '<pkg> ==<vers>'. This does not currently handle
--- "installed" packages e.g. 'mtl installed'. This probably isn't a big deal,
--- since all such libs will be built transitively anyway. That said, if
--- we wanted to fix it, we would probably want to change PackageResponse's
---
---   version :: Text
---
--- field to
---
---   version :: Maybe Text
---
--- and parse "installed" to Nothing. Then, when we go to write the generated
--- cabal file, Nothing will correspond to writing no version number.
--- (CLC.Stackage.Builder.Package.toText).
-parseCabalConfigLine :: Text -> Maybe PackageResponse
--- splitOn rather than breakOn since the former drops the delim, which is
--- convenient.
-parseCabalConfigLine txt = case T.splitOn delim txt of
-  [nameRaw, versRaw] -> do
-    (v, c) <- T.unsnoc versRaw
-    -- Strip trailing comma if it exists. Otherwise take everything.
-    let version = if c == ',' then v else T.snoc v c
-
-    -- This line handles prefixes e.g. whitespace or a stanza e.g.
-    --
-    --     constraints: abstract-deque ==0.3,
-    --                  abstract-deque-tests ==0.3,
-    --                  ...
-    --
-    -- We split pre-delim on whitespace, and take the last word.
-    (_, name) <- L.unsnoc $ T.words nameRaw
-
-    -- T.strip as trailing characters can cause problems e.g. windows can
-    -- pick up \r.
-    Just $
-      MkPackageResponse
-        { name = T.strip name,
-          version = T.strip version
-        }
-  _ -> Nothing
+-- | Parses a line like '<pkg> ==<vers>'.
+parseCabalConfigLine :: Text -> Maybe Package.Package
+parseCabalConfigLine txt = case MP.parse (MPC.space *> p) "package" txt of
+  Right x -> Just x
+  Left _ -> Nothing
   where
-    delim = " =="
+    -- Optional case for leading constraints section.
+    p = do
+      _ <- MP.optional (MPC.string "constraints:" *> MPC.space)
+      Package.packageParser
