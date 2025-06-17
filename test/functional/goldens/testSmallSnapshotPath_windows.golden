@@ -1,6 +1,6 @@
 [2020-05-31 12:00:00][Info]    Cached results do not exist: output\cache.json
 [2020-05-31 12:00:00][Warn]    Only found 8 packages. Is that right?
-[2020-05-31 12:00:00][Success] 1: cborg ==0.2.10.0, clock ==0.8.4, mtl insta...
+[2020-05-31 12:00:00][Success] 1: cborg-0.2.10.0, clock-0.8.4, mtl-installed...
 
 
 - Successes: 5 (100%)

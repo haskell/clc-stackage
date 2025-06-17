@@ -57,7 +57,7 @@ printPackageList mOs = do
 -- | Retrieves the package list formatted to text.
 getPackageListByOsFmt :: Os -> IO [Text]
 getPackageListByOsFmt =
-  (fmap . fmap) Package.toTextInstalled
+  (fmap . fmap) Package.toDisplayName
     . getPackageListByOs Logging.mkDefaultLogger Nothing
 
 -- | Helper in case we want to see what the package set for a given OS is.

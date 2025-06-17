@@ -15,7 +15,8 @@ tests =
     "CLC.Stackage.Utils.Package"
     [ testFromCabalConstraintsTextSuccesses,
       testToCabalDepText,
-      testToCabalConstraintsText
+      testToCabalConstraintsText,
+      testToDisplayName
     ]
 
 testFromCabalConstraintsTextSuccesses :: TestTree
@@ -42,6 +43,13 @@ testToCabalConstraintsText = testCase desc $ do
   "mtl installed," @=? Package.toCabalConstraintsText e2
   where
     desc = "toCabalConstraintsText"
+
+testToDisplayName :: TestTree
+testToDisplayName = testCase desc $ do
+  "aeson-2.0.1" @=? Package.toDisplayName e1
+  "mtl-installed" @=? Package.toDisplayName e2
+  where
+    desc = "toDisplayName"
 
 e1 :: Package
 e1 =

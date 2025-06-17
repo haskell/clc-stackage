@@ -115,7 +115,7 @@ buildProject env idx pkgs = do
       mconcat
         [ T.pack $ show idx,
           ": ",
-          T.intercalate ", " (Package.toTextInstalled <$> pkgsList)
+          T.intercalate ", " (Package.toDisplayName <$> pkgsList)
         ]
     pkgsList = NE.toList pkgs.unPackageGroup
     pkgsSet = Set.fromList pkgsList
