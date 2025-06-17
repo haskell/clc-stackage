@@ -36,7 +36,8 @@ main =
       testGroup
         "Functional"
         [ testSmall getNoCleanup,
-          testSmallBatch getNoCleanup
+          testSmallBatch getNoCleanup,
+          testSmallSnapshotPath getNoCleanup
         ]
 
 testSmall :: IO Bool -> TestTree
@@ -60,6 +61,22 @@ testSmallBatch getNoCleanup = runGolden getNoCleanup params
           testDesc = "Finishes clc-stackage with small package list and --batch",
           testName = [osp|testSmallBatch|]
         }
+
+testSmallSnapshotPath :: IO Bool -> TestTree
+testSmallSnapshotPath getNoCleanup = runGolden getNoCleanup params
+  where
+    params =
+      MkGoldenParams
+        { args = ["--snapshot-path", snapshotPath],
+          runner = runSmall,
+          testDesc,
+          testName = [osp|testSmallSnapshotPath|]
+        }
+    testDesc = "Finishes clc-stackage with small package list and --snapshot-path"
+
+    snapshotPath =
+      Paths.unsafeDecodeUtf $
+        [osp|test|] </> [osp|functional|] </> [osp|snapshot.txt|]
 
 -- | Tests building only a few packages
 runSmall :: IO [ByteString]
@@ -113,7 +130,8 @@ mkHLogger = do
 
   let hLogger =
         Logging.MkHandle
-          { Logging.getLocalTime = pure mkLocalTime,
+          { Logging.color = False,
+            Logging.getLocalTime = pure mkLocalTime,
             Logging.logStrLn = \s -> modifyIORef' logsRef (s :),
             Logging.logStrErrLn = \s -> modifyIORef' logsRef (s :),
             Logging.terminalWidth = 80

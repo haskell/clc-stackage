@@ -1,35 +1,54 @@
 -- | REST API for stackage.org.
 module CLC.Stackage.Parser.API
-  ( withResponse,
+  ( -- * Querying stackage
+    StackageResponse (..),
+    PackageResponse (..),
+    getStackage,
+
+    -- ** Exceptions
+    StackageException (..),
+    ExceptionReason (..),
+
+    -- * Misc
     stackageSnapshot,
   )
 where
 
-import Network.HTTP.Client (BodyReader, Request, Response)
-import Network.HTTP.Client qualified as HttpClient
+import CLC.Stackage.Parser.API.CabalConfig qualified as CabalConfig
+import CLC.Stackage.Parser.API.Common
+  ( ExceptionReason
+      ( ReasonDecodeJson,
+        ReasonDecodeUtf8,
+        ReasonReadBody,
+        ReasonStatus
+      ),
+    PackageResponse (name, version),
+    StackageException (MkStackageException),
+    StackageResponse (MkStackageResponse, packages),
+  )
+import CLC.Stackage.Parser.API.JSON qualified as JSON
+import CLC.Stackage.Utils.Exception qualified as Ex
+import CLC.Stackage.Utils.Logging qualified as Logging
+import Control.Exception (Exception (displayException))
+import Data.Text qualified as T
 import Network.HTTP.Client.TLS qualified as TLS
 
--- | Hits the stackage endpoint, invoking the callback on the result.
-withResponse :: (Response BodyReader -> IO a) -> IO a
-withResponse onResponse = do
+-- | Returns the 'StackageResponse' corresponding to the given snapshot.
+getStackage :: Logging.Handle -> IO StackageResponse
+getStackage hLogger = do
   manager <- TLS.newTlsManager
-  req <- getRequest
-  HttpClient.withResponse req manager onResponse
+  Ex.tryAny (JSON.getStackage manager stackageSnapshot) >>= \case
+    Right r1 -> pure $ r1
+    Left jsonEx -> do
+      let msg =
+            mconcat
+              [ "Json endpoint failed. Trying cabal config next: ",
+                T.pack $ displayException jsonEx
+              ]
 
-getRequest :: IO Request
-getRequest = updateReq <$> mkReq
-  where
-    mkReq = HttpClient.parseRequest stackageUrl
-    updateReq r =
-      r
-        { HttpClient.requestHeaders =
-            [ ("Accept", "application/json;charset=utf-8,application/json")
-            ]
-        }
+      Logging.putTimeWarnStr hLogger msg
 
--- | Url for the stackage snapshot.
-stackageUrl :: String
-stackageUrl = "https://stackage.org/" <> stackageSnapshot
+      CabalConfig.getStackage manager stackageSnapshot
 
 -- | Stackage snapshot. Note that picking a "good" snapshot is something of
 -- an art i.e. not all valid snapshots return json output at the

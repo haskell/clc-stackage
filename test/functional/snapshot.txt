@@ -1,0 +1,14 @@
+# This is the list of packages from the functional tests' modifyPackages
+# (chosen for consistency) with a few others thrown in, to test that filtering
+# works the same for both querying stackage and reading this file. This list
+# is intentionally kept small to make maintenance easier.
+aeson ==2.2.3.0
+cborg ==0.2.10.0
+clock ==0.8.4
+kan-extensions ==5.2.6
+# Note that mtl doesn't actually get parsed, due to the different format.
+# This line merely tests that such lines do not cause an error.
+mtl installed
+optics-core ==0.4.1.1
+profunctors ==5.6.2
+servant ==0.20.2

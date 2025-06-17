@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module CLC.Stackage.Parser
@@ -11,15 +10,18 @@ module CLC.Stackage.Parser
   )
 where
 
-import CLC.Stackage.Parser.Data.Response
+import CLC.Stackage.Parser.API
   ( PackageResponse (name, version),
     StackageResponse (packages),
   )
-import CLC.Stackage.Parser.Query qualified as Query
+import CLC.Stackage.Parser.API qualified as API
+import CLC.Stackage.Parser.API.CabalConfig qualified as CabalConfig
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.JSON qualified as JSON
+import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.OS (Os (Linux, Osx, Windows))
 import CLC.Stackage.Utils.OS qualified as OS
+import Control.Monad (when)
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Foldable (for_)
 import Data.Set (Set)
@@ -27,12 +29,13 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
-import System.OsPath (osp)
+import System.OsPath (OsPath, osp)
 
 -- | Retrieves the list of packages, based on
 -- 'CLC.Stackage.Parser.API.stackageUrl'.
-getPackageList :: IO [PackageResponse]
-getPackageList = getPackageListByOs OS.currentOs
+getPackageList :: Logging.Handle -> Maybe OsPath -> IO [PackageResponse]
+getPackageList hLogger msnapshotPath =
+  getPackageListByOs hLogger msnapshotPath OS.currentOs
 
 -- | Prints the package list to a file.
 printPackageList :: Bool -> Maybe Os -> IO ()
@@ -52,7 +55,9 @@ printPackageList incVers mOs = do
 
 -- | Retrieves the package list formatted to text.
 getPackageListByOsFmt :: Bool -> Os -> IO [Text]
-getPackageListByOsFmt incVers = (fmap . fmap) toText . getPackageListByOs
+getPackageListByOsFmt incVers =
+  (fmap . fmap) toText
+    . getPackageListByOs Logging.mkDefaultLogger Nothing
   where
     toText r =
       if incVers
@@ -60,12 +65,26 @@ getPackageListByOsFmt incVers = (fmap . fmap) toText . getPackageListByOs
         else r.name
 
 -- | Helper in case we want to see what the package set for a given OS is.
-getPackageListByOs :: Os -> IO [PackageResponse]
-getPackageListByOs os = do
+getPackageListByOs :: Logging.Handle -> Maybe OsPath -> Os -> IO [PackageResponse]
+getPackageListByOs hLogger msnapshotPath os = do
   excludedPkgs <- getExcludedPkgs os
   let filterExcluded = flip Set.notMember excludedPkgs . (.name)
 
-  response <- Query.getStackage
+  response <- case msnapshotPath of
+    Nothing -> API.getStackage hLogger
+    Just snapshotPath ->
+      CabalConfig.parseCabalConfig
+        <$> IO.readFileUtf8 snapshotPath
+
+  let numPackages = length response.packages
+  when (numPackages < 2000) $ do
+    let msg =
+          mconcat
+            [ "Only found ",
+              T.pack $ show numPackages,
+              " packages. Is that right?"
+            ]
+    Logging.putTimeWarnStr hLogger msg
 
   let packages = filter filterExcluded response.packages
 

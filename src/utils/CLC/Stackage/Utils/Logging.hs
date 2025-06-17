@@ -1,10 +1,12 @@
 module CLC.Stackage.Utils.Logging
   ( -- * Logging Handler
     Handle (..),
+    mkDefaultLogger,
 
     -- * Printing with timestamps
     putTimeInfoStr,
     putTimeSuccessStr,
+    putTimeWarnStr,
     putTimeErrStr,
 
     -- ** ANSI Colors
@@ -22,13 +24,17 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (LocalTime)
+import Data.Time.LocalTime qualified as Local
 import Data.Word (Word16)
-import System.Console.Pretty (Color (Blue, Green, Magenta, Red))
+import System.Console.Pretty (Color (Blue, Green, Magenta, Red, Yellow))
 import System.Console.Pretty qualified as Pretty
+import System.IO (hPutStrLn, stderr)
 
 -- | Simple handle for logging, for testing output.
 data Handle = MkHandle
-  { -- | Retrieve local time.
+  { -- | If true, colors the logs.
+    color :: Bool,
+    -- | Retrieve local time.
     getLocalTime :: IO LocalTime,
     -- | Log stderr.
     logStrErrLn :: Text -> IO (),
@@ -39,26 +45,37 @@ data Handle = MkHandle
   }
 
 -- | 'putStrLn' with a timestamp and info prefix.
-putTimeInfoStr :: Handle -> Bool -> Text -> IO ()
-putTimeInfoStr hLogger b s = do
+putTimeInfoStr :: Handle -> Text -> IO ()
+putTimeInfoStr hLogger s = do
   timeStr <- getLocalTimeString hLogger
-  hLogger.logStrLn $ colorBlue b $ "[" <> timeStr <> "][Info]    " <> s'
+  hLogger.logStrLn $ colorBlue hLogger.color $ "[" <> timeStr <> "][Info]    " <> s'
   where
     s' = truncateIfNeeded hLogger.terminalWidth s
 
 -- | 'putStrLn' with a timestamp and info prefix.
-putTimeSuccessStr :: Handle -> Bool -> Text -> IO ()
-putTimeSuccessStr hLogger b s = do
+putTimeSuccessStr :: Handle -> Text -> IO ()
+putTimeSuccessStr hLogger s = do
   timeStr <- getLocalTimeString hLogger
-  hLogger.logStrLn $ colorGreen b $ "[" <> timeStr <> "][Success] " <> s'
+  hLogger.logStrLn $ colorGreen hLogger.color $ "[" <> timeStr <> "][Success] " <> s'
   where
     s' = truncateIfNeeded hLogger.terminalWidth s
 
--- | 'putStrErrLn' with a timestamp and error prefix.
-putTimeErrStr :: Handle -> Bool -> Text -> IO ()
-putTimeErrStr hLogger b s = do
+-- | 'putStrLn' with a timestamp and warn prefix.
+putTimeWarnStr :: Handle -> Text -> IO ()
+putTimeWarnStr hLogger s = do
   timeStr <- getLocalTimeString hLogger
-  hLogger.logStrErrLn $ colorRed b $ "[" <> timeStr <> "][Error]   " <> s'
+  hLogger.logStrErrLn $ colorYellow hLogger.color $ "[" <> timeStr <> "][Warn]    " <> s'
+  where
+    -- Allow this to be longer than the terminal width, since this is
+    -- generally used as a one-off message, and the warning may include useful
+    -- error info.
+    s' = truncateIfNeeded 200 s
+
+-- | 'putStrErrLn' with a timestamp and error prefix.
+putTimeErrStr :: Handle -> Text -> IO ()
+putTimeErrStr hLogger s = do
+  timeStr <- getLocalTimeString hLogger
+  hLogger.logStrErrLn $ colorRed hLogger.color $ "[" <> timeStr <> "][Error]   " <> s'
   where
     s' = truncateIfNeeded hLogger.terminalWidth s
 
@@ -81,6 +98,9 @@ colorGreen b = colorIf b Green
 
 colorRed :: Bool -> Text -> Text
 colorRed b = colorIf b Red
+
+colorYellow :: Bool -> Text -> Text
+colorYellow b = colorIf b Yellow
 
 colorIf :: Bool -> Color -> Text -> Text
 colorIf True = Pretty.color
@@ -119,3 +139,13 @@ constLen = 11
 -- e.g. [2024-10-14 15:14:00]
 timeStrLen :: Word16
 timeStrLen = 21
+
+mkDefaultLogger :: Handle
+mkDefaultLogger =
+  MkHandle
+    { color = False,
+      getLocalTime = Local.zonedTimeToLocalTime <$> Local.getZonedTime,
+      logStrErrLn = hPutStrLn stderr . T.unpack,
+      logStrLn = putStrLn . T.unpack,
+      terminalWidth = 80
+    }

@@ -13,7 +13,7 @@ import Unit.Prelude
 tests :: TestTree
 tests =
   testGroup
-    "Sequential.Env"
+    "CLC.Stackage.Runner.Env"
     [ testResults,
       newCacheTests
     ]

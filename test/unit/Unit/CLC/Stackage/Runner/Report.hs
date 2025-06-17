@@ -27,7 +27,7 @@ import Unit.Prelude
 tests :: TestTree
 tests =
   testGroup
-    "Sequential.Report"
+    "CLC.Stackage.Runner.Report"
     [ testMkReport,
       testResultJsonEncode,
       testReportJsonEncode

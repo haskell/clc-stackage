@@ -2,8 +2,9 @@ module Main (main) where
 
 import Test.Tasty (defaultMain, localOption, testGroup)
 import Test.Tasty.Golden (DeleteOutputFile (OnPass))
-import Unit.CLC.Stackage.Runner.Env qualified as Env
-import Unit.CLC.Stackage.Runner.Report qualified as Report
+import Unit.CLC.Stackage.Parser.API qualified as Parser.API
+import Unit.CLC.Stackage.Runner.Env qualified as Runner.Env
+import Unit.CLC.Stackage.Runner.Report qualified as Runner.Report
 
 main :: IO ()
 main =
@@ -11,6 +12,7 @@ main =
     localOption OnPass $
       testGroup
         "Unit"
-        [ Env.tests,
-          Report.tests
+        [ Parser.API.tests,
+          Runner.Env.tests,
+          Runner.Report.tests
         ]

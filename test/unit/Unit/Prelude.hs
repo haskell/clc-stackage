@@ -11,7 +11,6 @@ import CLC.Stackage.Builder.Env
         batch,
         buildArgs,
         cabalPath,
-        colorLogs,
         groupFailFast,
         hLogger,
         packagesToBuild,
@@ -67,11 +66,11 @@ mkBuildEnv = do
       { batch = Nothing,
         buildArgs = [],
         cabalPath = "cabal",
-        colorLogs = True,
         groupFailFast = False,
         hLogger =
           Logging.MkHandle
-            { getLocalTime = pure mkLocalTime,
+            { color = False,
+              getLocalTime = pure mkLocalTime,
               logStrErrLn = const (pure ()),
               logStrLn = const (pure ()),
               terminalWidth = 80

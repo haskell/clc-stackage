@@ -25,10 +25,11 @@ import Options.Applicative
     (<**>),
   )
 import Options.Applicative qualified as OA
+import Options.Applicative.Help (Doc)
 import Options.Applicative.Help.Chunk (Chunk (Chunk))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
-import Options.Applicative.Types (ArgPolicy (Intersperse))
+import Options.Applicative.Types (ArgPolicy (Intersperse), ReadM)
 import System.OsPath (OsPath)
 import System.OsPath qualified as OsP
 
@@ -64,6 +65,9 @@ data Args = MkArgs
     packageFailFast :: Bool,
     -- | Whether to retry packages that failed.
     retryFailures :: Bool,
+    -- | Optional path to snapshot file. If given, we use the file's contents
+    -- as the package set, rather than the stackage server.
+    snapshotPath :: Maybe OsPath,
     -- | Determines what logs to write.
     writeLogs :: Maybe WriteLogs
   }
@@ -107,8 +111,29 @@ getArgs = OA.execParser parserInfoArgs
             mconcat
               [ "This will build everything in one package group, and pass ",
                 "--keep-going to cabal."
-              ]
+              ],
+          Chunk.paragraph "Examples:",
+          mkExample
+            [ "# Basic example",
+              "$ clc-stackage"
+            ],
+          mkExample
+            [ "# Batch with groups of 100 and some cabal options",
+              "$ clc-stackage --batch 100 --cabal-options='--semaphore --verbose=1'"
+            ],
+          mkExample
+            [ "# Run with custom cabal",
+              "$ clc-stackage --cabal-path=path/to/cabal --cabal-options='--store-dir=path/to/store'"
+            ],
+          mkExample
+            [ "# Run with custom snapshot",
+              "$ clc-stackage --snapshot-path=path/to/snapshot-file"
+            ]
         ]
+    mkExample :: [String] -> Chunk Doc
+    mkExample =
+      Chunk.vcatChunks
+        . fmap (fmap (Pretty.indent 2) . Chunk.stringChunk)
 
 parseCliArgs :: Parser Args
 parseCliArgs =
@@ -122,6 +147,7 @@ parseCliArgs =
       noCleanup <- parseNoCleanup
       packageFailFast <- parsePackageFailFast
       retryFailures <- parseRetryFailures
+      snapshotPath <- parseSnapshotPath
       writeLogs <- parseWriteLogs
 
       pure $
@@ -135,6 +161,7 @@ parseCliArgs =
             noCleanup,
             packageFailFast,
             retryFailures,
+            snapshotPath,
             writeLogs
           }
   )
@@ -184,12 +211,6 @@ parseCabalPath =
             mkHelp "Optional path to cabal executable."
           ]
       )
-  where
-    readOsPath = do
-      fp <- OA.str
-      case OsP.encodeUtf fp of
-        Just osp -> pure osp
-        Nothing -> fail $ "Failed encoding to ospath: " ++ fp
 
 parseColorLogs :: Parser ColorLogs
 parseColorLogs =
@@ -275,6 +296,28 @@ parseRetryFailures =
         ]
     )
 
+parseSnapshotPath :: Parser (Maybe OsPath)
+parseSnapshotPath =
+  OA.optional $
+    OA.option
+      readOsPath
+      ( mconcat
+          [ OA.long "snapshot-path",
+            OA.metavar "PATH",
+            mkHelp $
+              mconcat
+                [ "Optional path to snapshot file. If given, this overrides ",
+                  "the stackage snapshot; that is, we use the file's contents, ",
+                  "rather than the stackage server. The file should be ",
+                  "formatted similar to ",
+                  "https://www.stackage.org/<snapshot>/cabal.config i.e. each ",
+                  "line should be '<pkg> ==<vers>' e.g. 'lens ==5.3.4'. Note ",
+                  "that the snapshot is still filtered according to ",
+                  "excluded_pkgs.json."
+                ]
+          ]
+      )
+
 parseWriteLogs :: Parser (Maybe WriteLogs)
 parseWriteLogs =
   OA.optional $
@@ -306,6 +349,13 @@ parseWriteLogs =
               [ "Expected one of (none | current | save-failures), received: ",
                 other
               ]
+
+readOsPath :: ReadM OsPath
+readOsPath = do
+  fp <- OA.str
+  case OsP.encodeUtf fp of
+    Just osp -> pure osp
+    Nothing -> fail $ "Failed encoding to ospath: " ++ fp
 
 mkHelp :: String -> Mod f a
 mkHelp =
