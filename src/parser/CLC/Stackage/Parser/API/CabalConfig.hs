@@ -82,6 +82,6 @@ parseCabalConfigLine txt = do
   let s = case T.stripPrefix "constraints:" txt' of
         Nothing -> txt'
         Just rest -> T.stripStart rest
-  Package.packageParser s
+  Package.fromCabalConstraintsText s
   where
     txt' = T.stripStart txt

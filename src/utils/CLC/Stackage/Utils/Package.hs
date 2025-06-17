@@ -12,13 +12,10 @@ module CLC.Stackage.Utils.Package
     toCabalDepText,
     toCabalConstraintsText,
     toDirName,
-    toTextInstalled,
+    toDisplayName,
 
     -- * Version
     PackageVersion (..),
-
-    -- * Parsers
-    packageParser,
   )
 where
 
@@ -89,7 +86,16 @@ toCabalConstraintsText = (<> ",") . toTextInstalled
 -- representation of 'toText'. Used when naming an error directory for a
 -- package that fails.
 toDirName :: Package -> IO OsPath
-toDirName = Paths.encodeUtf . T.unpack . toTextInstalled
+toDirName = Paths.encodeUtf . T.unpack . toDisplayName
+
+-- | Slightly nicer display name e.g. "mtl-installed", "aeson-1.2.3".
+toDisplayName :: Package -> Text
+toDisplayName (MkPackage name vers) = txt
+  where
+    txt = name <> "-" <> v
+    v = case vers of
+      PackageVersionText t -> t
+      PackageVersionInstalled -> "installed"
 
 -- | Text representation of the package respecting "installed" versions e.g.
 --
