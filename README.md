@@ -61,15 +61,42 @@ The procedure is as follows:
 
 ### The clc-stackage exe
 
-Previously, this project was just a single (massive) cabal file that had to be manually updated. Usage was fairly simple: `cabal build clc-stackage --keep-going` to build the project, `--keep-going` so that as many packages as possible are built.
+`clc-stackage` is an executable that will:
 
-This has been updated so that `clc-stackage` is now an executable that will automatically generate the desired cabal file based on the results of querying stackage directly. This streamlines updates, provides a more flexible build process, and potentially has prettier output (with `--batch` arg):
+1. Download the stackage snapshot from the stackage server.
+2. Divide the snapshot into groups (determined by `--batch` argument).
+3. For each group, generate a cabal file and attempt to build it.
 
-![demo](example_output.png)
+#### Querying stackage
 
-In particular, the `clc-stackage` exe allows for splitting the entire package set into subset groups of size `N` with the `--batch N` option. Each group is then built sequentially. Not only can this be useful for situations where building the entire package set in one go is infeasible, but it also provides a "cache" functionality, that allows us to interrupt the program at any point (e.g. `CTRL-C`), and pick up where we left off. For example:
+By default, `clc-stackage` queries https://www.stackage.org/ for snapshot information. In situations where this is not desirable (e.g. the server is not working, or we want to test a custom snapshot), the snapshot can be overridden:
+
+```sh
+$ ./bin/clc-stackage --snapshot-path=path/to/snapshot
+```
+
+This snapshot should be formatted similar to the `cabal.config` endpoint on the stackage server (e.g. https://www.stackage.org/nightly/cabal.config). That is, package lines should be formatted `<pkgs> ==<vers>`:
 
 ```
+abstract-deque ==0.3
+abstract-deque-tests ==0.3
+abstract-par ==0.3.3
+AC-Angle ==1.0
+acc ==0.2.0.3
+...
+```
+
+The stackage config itself is valid, so trailing commas and other extraneous lines are allowed (and ignored).
+
+#### Investigating failures
+
+By default (`--write-logs save-failures`), the build logs are saved to the `./output/logs/` directory, with `./output/logs/current-build/` streaming the current build logs.
+
+#### Group batching
+
+The `clc-stackage` exe allows for splitting the entire package set into subset groups of size `N` with the `--batch N` option. Each group is then built sequentially. Not only can this be useful for situations where building the entire package set in one go is infeasible, but it also provides a "cache" functionality, that allows us to interrupt the program at any point (e.g. `CTRL-C`), and pick up where we left off. For example:
+
+```sh
 $ ./bin/clc-stackage --batch 100
 ```
 
@@ -77,7 +104,7 @@ This will split the entire downloaded package set into groups of size 100. Each 
 
 See `./bin/clc-stackage --help` for more info.
 
-#### Optimal performance
+##### Optimal performance
 
 On the one hand, splitting the entire package set into `--batch` groups makes the output easier to understand and offers a nice workflow for interrupting/restarting the build. On the other hand, there is a question of what the best value of `N` is for `--batch N`, with respect to performance.
 

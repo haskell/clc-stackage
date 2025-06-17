@@ -43,6 +43,11 @@ jobs:
 
       - name: Functional Tests
         id: functional
+        # We want to run these tests even if the unit tests fail, because
+        # it is useful to know if e.g. the unit tests fail due to one
+        # stackage endpoint failing, but the functional tests pass due to
+        # a backup working.
+        if: always()
         shell: bash
         run: NO_CLEANUP=1 cabal test functional
 

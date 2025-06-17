@@ -55,13 +55,15 @@ library parser
   exposed-modules:
     CLC.Stackage.Parser
     CLC.Stackage.Parser.API
-    CLC.Stackage.Parser.Data.Response
-    CLC.Stackage.Parser.Query
+    CLC.Stackage.Parser.API.CabalConfig
+    CLC.Stackage.Parser.API.Common
+    CLC.Stackage.Parser.API.JSON
 
   build-depends:
     , aeson
     , bytestring
     , containers       >=0.6.3.1 && <0.9
+    , deepseq          >=1.4.6.0 && <1.6
     , filepath
     , http-client      >=0.5.9   && <0.8
     , http-client-tls  ^>=0.3
@@ -121,8 +123,6 @@ executable clc-stackage
   build-depends:
     , runner
     , terminal-size  ^>=0.3.4
-    , text
-    , time
     , utils
 
   hs-source-dirs: ./app
@@ -143,6 +143,7 @@ test-suite unit
   type:           exitcode-stdio-1.0
   main-is:        Main.hs
   other-modules:
+    Unit.CLC.Stackage.Parser.API
     Unit.CLC.Stackage.Runner.Env
     Unit.CLC.Stackage.Runner.Report
     Unit.Prelude
@@ -151,11 +152,14 @@ test-suite unit
     , base
     , builder
     , containers
+    , deepseq
     , filepath
+    , http-client-tls
+    , parser
     , runner
     , tasty
     , tasty-golden
-    , tasty-hunit   >=0.9 && <0.11
+    , tasty-hunit      >=0.9 && <0.11
     , test-utils
     , time
     , utils

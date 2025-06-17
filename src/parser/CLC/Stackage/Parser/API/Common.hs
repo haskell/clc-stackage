@@ -1,55 +1,46 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE QuasiQuotes #-}
+-- | Types and functions common to stackage JSON and CabalConfig APIs.
+module CLC.Stackage.Parser.API.Common
+  ( -- * Types
+    StackageResponse (..),
+    PackageResponse (..),
 
-module CLC.Stackage.Parser.Query
-  ( -- * Querying stackage
-    getStackage,
-
-    -- ** Exceptions
+    -- * Exception
     StackageException (..),
     ExceptionReason (..),
+
+    -- * Misc
+    getStatusCode,
   )
 where
 
-import CLC.Stackage.Parser.API
-  ( stackageSnapshot,
-    withResponse,
-  )
-import CLC.Stackage.Parser.Data.Response (StackageResponse)
-import CLC.Stackage.Utils.Exception qualified as Ex
-import CLC.Stackage.Utils.JSON qualified as JSON
+import Control.DeepSeq (NFData)
 import Control.Exception
   ( Exception (displayException),
     SomeException,
-    throwIO,
   )
-import Control.Monad (when)
 import Data.ByteString (ByteString)
+import Data.Text (Text)
+import Data.Text.Encoding.Error (UnicodeException)
+import GHC.Generics (Generic)
 import Network.HTTP.Client (Response)
 import Network.HTTP.Client qualified as HttpClient
 import Network.HTTP.Types.Status (Status)
 import Network.HTTP.Types.Status qualified as Status
 
--- | Returns the 'StackageResponse' corresponding to the given snapshot.
-getStackage :: IO StackageResponse
-getStackage = withResponse $ \res -> do
-  let bodyReader = HttpClient.responseBody res
-      status = HttpClient.responseStatus res
-      statusCode = getStatusCode res
-      mkEx = MkStackageException stackageSnapshot
+-- | Stackage response. This type unifies different stackage responses.
+newtype StackageResponse = MkStackageResponse
+  { packages :: [PackageResponse]
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
 
-  when (statusCode /= 200) $
-    throwIO $
-      mkEx (ReasonStatus status)
-
-  bodyBs <-
-    Ex.mapThrowLeft
-      (mkEx . ReasonReadBody)
-      =<< Ex.tryAny (mconcat <$> HttpClient.brConsume bodyReader)
-
-  Ex.mapThrowLeft
-    (mkEx . ReasonDecodeJson bodyBs)
-    (JSON.decode bodyBs)
+-- | Package in a stackage snapshot.
+data PackageResponse = MkPackageResponse
+  { name :: Text,
+    version :: Text
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
 
 -- | Exception reason.
 data ExceptionReason
@@ -60,6 +51,9 @@ data ExceptionReason
   | -- | Exception decoding JSON. The first string is the json we attempted
     -- to decode. The second is the error message.
     ReasonDecodeJson ByteString String
+  | -- | Exception decoding JSON. The first string is the bytestring we
+    -- attempted to decode. The second is the error message.
+    ReasonDecodeUtf8 ByteString UnicodeException
   deriving stock (Show)
 
 -- | General network exception.
@@ -99,10 +93,17 @@ instance Exception StackageException where
           ]
       ReasonDecodeJson jsonBs err ->
         mconcat
-          [ "Could not decode JSON:\n\n",
-            show jsonBs,
-            "\n\nError: ",
-            err
+          [ "Could not decode JSON: ",
+            err,
+            "This is likely due to the endpoint returning HTML, not JSON. Bytes: ",
+            show jsonBs
+          ]
+      ReasonDecodeUtf8 bs err ->
+        mconcat
+          [ "Could not decode UTF-8: ",
+            displayException err,
+            ". Bytes: ",
+            show bs
           ]
     where
       snapshot = ex.snapshot

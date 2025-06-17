@@ -15,7 +15,6 @@ import CLC.Stackage.Builder.Env
   ( BuildEnv
       ( MkBuildEnv,
         batch,
-        colorLogs,
         groupFailFast,
         hLogger,
         packagesToBuild,
@@ -31,9 +30,10 @@ import CLC.Stackage.Builder.Env
 import CLC.Stackage.Builder.Env qualified as Builder.Env
 import CLC.Stackage.Builder.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Parser qualified as Parser
-import CLC.Stackage.Parser.Data.Response (PackageResponse (name, version))
+import CLC.Stackage.Parser.API (PackageResponse (name, version))
 import CLC.Stackage.Runner.Args
-  ( ColorLogs
+  ( Args (snapshotPath),
+    ColorLogs
       ( ColorLogsDetect,
         ColorLogsOff,
         ColorLogsOn
@@ -89,9 +89,18 @@ data RunnerEnv = MkRunnerEnv
 -- | Creates an environment based on cli args and cache data. The parameter
 -- modifies the package set returned by stackage.
 setup :: Logging.Handle -> ([Package] -> [Package]) -> IO RunnerEnv
-setup hLogger modifyPackages = do
-  startTime <- hLogger.getLocalTime
+setup hLoggerRaw modifyPackages = do
+  startTime <- hLoggerRaw.getLocalTime
   cliArgs <- Args.getArgs
+
+  colorLogs <-
+    case cliArgs.colorLogs of
+      ColorLogsOff -> pure False
+      ColorLogsOn -> pure True
+      ColorLogsDetect -> supportsPretty
+
+  -- Update logger with CLI color param.
+  let hLogger = hLoggerRaw {Logging.color = colorLogs}
 
   -- Set up build args for cabal, filling in missing defaults
   let buildArgs =
@@ -114,22 +123,16 @@ setup hLogger modifyPackages = do
   successesRef <- newIORef Set.empty
   failuresRef <- newIORef Set.empty
 
-  colorLogs <-
-    case cliArgs.colorLogs of
-      ColorLogsOff -> pure False
-      ColorLogsOn -> pure True
-      ColorLogsDetect -> supportsPretty
-
   cache <-
     if cliArgs.noCache
       then pure Nothing
-      else Report.readCache hLogger colorLogs
+      else Report.readCache hLogger
 
   -- (entire set, packages to build)
   (completePackageSet, pkgsList) <- case cache of
     Nothing -> do
       -- if no cache exists, query stackage
-      pkgsResponses <- Parser.getPackageList
+      pkgsResponses <- Parser.getPackageList hLogger cliArgs.snapshotPath
       let completePackageSet = responseToPkgs <$> pkgsResponses
           pkgs = modifyPackages completePackageSet
       pure (completePackageSet, pkgs)
@@ -154,7 +157,7 @@ setup hLogger modifyPackages = do
   packagesToBuild <- case pkgsList of
     (p : ps) -> pure (p :| ps)
     [] -> do
-      Logging.putTimeInfoStr hLogger colorLogs "Cache exists but has no packages to test."
+      Logging.putTimeInfoStr hLogger "Cache exists but has no packages to test."
       throwIO ExitSuccess
 
   let progress =
@@ -168,7 +171,6 @@ setup hLogger modifyPackages = do
           { batch = cliArgs.batch,
             buildArgs,
             cabalPath,
-            colorLogs,
             groupFailFast = cliArgs.groupFailFast,
             hLogger,
             packagesToBuild,
@@ -216,16 +218,17 @@ teardown env = do
 
   Report.saveReport report
 
+  let colorLogs = env.buildEnv.hLogger.color
   env.buildEnv.hLogger.logStrLn $
     T.unlines
       [ "",
         "",
-        Logging.colorGreen env.buildEnv.colorLogs $ "- Successes: " <> successStr report,
-        Logging.colorRed env.buildEnv.colorLogs $ "- Failures:  " <> failureStr report,
-        Logging.colorMagenta env.buildEnv.colorLogs $ "- Untested:  " <> untestedStr report,
+        Logging.colorGreen colorLogs $ "- Successes: " <> successStr report,
+        Logging.colorRed colorLogs $ "- Failures:  " <> failureStr report,
+        Logging.colorMagenta colorLogs $ "- Untested:  " <> untestedStr report,
         "",
-        Logging.colorBlue env.buildEnv.colorLogs $ "- Start: " <> report.startTime,
-        Logging.colorBlue env.buildEnv.colorLogs $ "- End:   " <> report.endTime
+        Logging.colorBlue colorLogs $ "- Start: " <> report.startTime,
+        Logging.colorBlue colorLogs $ "- End:   " <> report.endTime
       ]
   where
     successStr r = fmtPercent r.stats.numSuccesses r.stats.successRate

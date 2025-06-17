@@ -38,8 +38,6 @@ data BuildEnv = MkBuildEnv
     buildArgs :: [String],
     -- | Optional path to cabal executable.
     cabalPath :: FilePath,
-    -- | If true, colors logs.
-    colorLogs :: Bool,
     -- | If true, the first group that fails to completely build stops
     -- clc-stackage. Defaults to false.
     groupFailFast :: Bool,

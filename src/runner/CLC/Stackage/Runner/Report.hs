@@ -104,19 +104,19 @@ mkReport results startTime endTime =
     dv n = floor $ 100 * (fromIntegral n / numAllTested)
 
 -- | Reads results data, if the cache exists.
-readCache :: Logging.Handle -> Bool -> IO (Maybe Results)
-readCache handle colorLogs = do
+readCache :: Logging.Handle -> IO (Maybe Results)
+readCache handle = do
   catchPathStr <- T.pack <$> OsPath.decodeUtf Paths.cachePath
   Dir.doesFileExist Paths.cachePath >>= \case
     False -> do
-      Logging.putTimeInfoStr handle colorLogs $ "Cached results do not exist: " <> catchPathStr
+      Logging.putTimeInfoStr handle $ "Cached results do not exist: " <> catchPathStr
       pure Nothing
     True -> do
       contents <- IO.readBinaryFile Paths.cachePath
       case JSON.decode contents of
         Left err -> throwIO $ AesonException err
         Right r -> do
-          Logging.putTimeInfoStr handle colorLogs $ "Using cached results: " <> catchPathStr
+          Logging.putTimeInfoStr handle $ "Using cached results: " <> catchPathStr
           pure $ Just r
 
 -- | Saves the current progress data as the next prior run.

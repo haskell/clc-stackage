@@ -9,7 +9,6 @@ import CLC.Stackage.Builder.Batch (PackageGroup (unPackageGroup))
 import CLC.Stackage.Builder.Env
   ( BuildEnv
       ( cabalPath,
-        colorLogs,
         groupFailFast,
         hLogger,
         progress,
@@ -101,11 +100,11 @@ buildProject env idx pkgs = do
     ExitSuccess -> do
       -- save results
       modifyIORef' env.progress.successesRef addPackages
-      Logging.putTimeSuccessStr env.hLogger env.colorLogs msg
+      Logging.putTimeSuccessStr env.hLogger msg
     ExitFailure _ -> do
       -- save results
       modifyIORef' env.progress.failuresRef addPackages
-      Logging.putTimeErrStr env.hLogger env.colorLogs msg
+      Logging.putTimeErrStr env.hLogger msg
 
       -- throw error if fail fast
       when env.groupFailFast $ throwIO exitCode

@@ -96,9 +96,11 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
     1. `ghc-version` in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
     2. [README.md](README.md).
 
-5. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
+5. Update functional tests as needed i.e. exact package versions in `*golden` and `test/functional/snapshot.txt`.
 
-6. Optional: Update nix inputs (`nix flake update`).
+6. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
+
+7. Optional: Update nix inputs (`nix flake update`).
 
 ## Testing
 
