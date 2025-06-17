@@ -25,29 +25,24 @@ where
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Applicative (Alternative ((<|>)))
 import Control.DeepSeq (NFData)
-import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON))
 import Data.Aeson qualified as Asn
 import Data.Char qualified as Ch
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Void (Void)
 import GHC.Generics (Generic)
 import System.OsPath (OsPath)
-import Text.Megaparsec qualified as MP
-import Text.Megaparsec.Char qualified as MPC
-import Text.Megaparsec.Char.Lexer qualified as MPCL
 
 -- | Wrapper for package version.
 data PackageVersion
   = -- | Basic version text e.g. "2.3".
     PackageVersionText Text
   | -- | Represents an installed lib e.g. "foo installed" from cabal
-    -- constraints. This is included in the from/toJSON instances, for the
+    -- constraints. This is included in the from/toJSON instances, for
     -- writing/reading the report.
     --
-    -- Generally speaking, this is only used when clc-stackage is falls back
+    -- Generally speaking, this is only used when clc-stackage falls back
     -- to the cabal.config endpoint, or is used with an explicit
     -- --snapshot-path argument.
     PackageVersionInstalled
@@ -120,48 +115,49 @@ toTextNoInstalled p = p.name <> versToTextNoInstalled p.version
 -- - "aeson ==2.0.0,"
 -- - "mtl installed"
 fromCabalConstraintsText :: Text -> Maybe Package
-fromCabalConstraintsText txt =
-  case MP.parse (MPC.space *> packageParser) "package" txt of
-    Right x -> Just x
-    Left _ -> Nothing
+fromCabalConstraintsText = packageParser . T.stripStart
 
-type Parser = MP.Parsec Void Text
-
--- | Parses packages e.g.
+-- NOTE: [*Parsers]
 --
--- - "aeson ==2.0.0,"
--- - "mtl installed"
-packageParser :: Parser Package
-packageParser = do
-  name <- nameParser
-  vers <- versionTextParser <|> versionInstalledParser
+-- DIY parser, where each function parses only as much as it needs, then
+-- returns the rest to be fed into the next parser. Following megaparsec's
+-- lead, each parser assumes that it is at the start of relevant text
+-- (i.e. no leading whitespace), and consumes trailing whitespace.
+--
+-- Hence the "rest" that is returned must have its leading whitespace stripped,
+-- so that the next parser can make the same assumption.
+
+packageParser :: Text -> Maybe Package
+packageParser txt = do
+  (name, r1) <- nameParser txt
+  (vers, _) <- versionTextParser r1 <|> versionInstalledParser r1
   pure $ MkPackage name vers
 
-nameParser :: Parser Text
-nameParser = lexeme $ MP.takeWhile1P (Just "name") isNameChar
+-- Split on whitepspace or equals e.g. "mtl installed", "aeson ==1.2.3".
+nameParser :: Text -> Maybe (Text, Text)
+nameParser txt
+  | T.null name = Nothing
+  | otherwise = Just (name, T.stripStart rest)
   where
-    isNameChar c = c /= ' ' && c /= '='
+    (name, rest) = T.break isNameChar txt
+    isNameChar c = c == ' ' || c == '='
 
-versionInstalledParser :: Parser PackageVersion
-versionInstalledParser = do
-  MPC.string "installed"
-  mcommaParser
-  pure PackageVersionInstalled
+-- Parse "installed".
+versionInstalledParser :: Text -> Maybe (PackageVersion, Text)
+versionInstalledParser txt = do
+  rest <- T.stripPrefix "installed" txt
+  pure (PackageVersionInstalled, T.stripStart rest)
 
-versionTextParser :: Parser PackageVersion
-versionTextParser = do
-  lexeme $ MPC.string delim
-  vers <- lexeme $ MP.takeWhile1P (Just "version") isVersChar
-  mcommaParser
-  pure $ PackageVersionText vers
+-- Parse e.g. "==1.2.3".
+versionTextParser :: Text -> Maybe (PackageVersion, Text)
+versionTextParser txt = do
+  r1 <- T.stripPrefix delim txt
+  let (vers, r2) = T.span isVersChar (T.stripStart r1)
+  if not (T.null vers)
+    then Just (PackageVersionText vers, T.stripStart r2)
+    else Nothing
   where
     isVersChar c = Ch.isDigit c || c == '.'
-
-mcommaParser :: Parser ()
-mcommaParser = lexeme $ void $ MP.optional $ MPC.char ','
-
-lexeme :: Parser a -> Parser a
-lexeme = MPCL.lexeme MPC.space
 
 versToTextInstalled :: PackageVersion -> Text
 versToTextInstalled (PackageVersionText t) = " " <> delim <> t

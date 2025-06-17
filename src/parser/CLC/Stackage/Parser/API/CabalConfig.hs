@@ -27,8 +27,6 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
 import Network.HTTP.Client (BodyReader, Manager, Request, Response)
 import Network.HTTP.Client qualified as HttpClient
-import Text.Megaparsec qualified as MP
-import Text.Megaparsec.Char qualified as MPC
 
 -- | Given http manager and snapshot string, queries the cabal config
 -- endpoint. This is intended as a backup, for when the primary endpoint fails.
@@ -79,11 +77,11 @@ parseCabalConfig =
 
 -- | Parses a line like '<pkg> ==<vers>'.
 parseCabalConfigLine :: Text -> Maybe Package.Package
-parseCabalConfigLine txt = case MP.parse (MPC.space *> p) "package" txt of
-  Right x -> Just x
-  Left _ -> Nothing
+parseCabalConfigLine txt = do
+  -- Strip leading 'constraints:' keyword, if it exists.
+  let s = case T.stripPrefix "constraints:" txt' of
+        Nothing -> txt'
+        Just rest -> T.stripStart rest
+  Package.packageParser s
   where
-    -- Optional case for leading constraints section.
-    p = do
-      _ <- MP.optional (MPC.string "constraints:" *> MPC.space)
-      Package.packageParser
+    txt' = T.stripStart txt
