@@ -6,8 +6,6 @@ aeson ==2.2.3.0
 cborg ==0.2.10.0
 clock ==0.8.4
 kan-extensions ==5.2.6
-# Note that mtl doesn't actually get parsed, due to the different format.
-# This line merely tests that such lines do not cause an error.
 mtl installed
 optics-core ==0.4.1.1
 profunctors ==5.6.2

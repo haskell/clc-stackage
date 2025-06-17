@@ -16,10 +16,10 @@ module CLC.Stackage.Runner.Report
   )
 where
 
-import CLC.Stackage.Builder.Package (Package)
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.JSON qualified as JSON
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.Package (Package)
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
 import Data.Aeson (AesonException (AesonException), FromJSON, ToJSON)

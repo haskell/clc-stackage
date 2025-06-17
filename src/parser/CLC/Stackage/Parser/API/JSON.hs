@@ -12,6 +12,7 @@ import CLC.Stackage.Parser.API.Common
 import CLC.Stackage.Parser.API.Common qualified as Common
 import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.JSON qualified as JSON
+import CLC.Stackage.Utils.Package qualified as Package
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import Data.Aeson (FromJSON, ToJSON)
@@ -68,11 +69,11 @@ toSnapshotCommon (MkStackageResponse _ pkgs) =
     { packages = toPackageCommon <$> pkgs
     }
 
-toPackageCommon :: PackageResponse -> Common.PackageResponse
+toPackageCommon :: PackageResponse -> Package.Package
 toPackageCommon pr =
-  Common.MkPackageResponse
+  Package.MkPackage
     { name = pr.name,
-      version = pr.version
+      version = Package.PackageVersionText pr.version
     }
 
 -- | Response returned by primary stackage endpoint e.g.

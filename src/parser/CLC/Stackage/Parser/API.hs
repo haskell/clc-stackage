@@ -2,7 +2,6 @@
 module CLC.Stackage.Parser.API
   ( -- * Querying stackage
     StackageResponse (..),
-    PackageResponse (..),
     getStackage,
 
     -- ** Exceptions
@@ -22,7 +21,6 @@ import CLC.Stackage.Parser.API.Common
         ReasonReadBody,
         ReasonStatus
       ),
-    PackageResponse (name, version),
     StackageException (MkStackageException),
     StackageResponse (MkStackageResponse, packages),
   )

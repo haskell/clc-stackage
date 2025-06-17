@@ -6,8 +6,8 @@ module CLC.Stackage.Builder.Env
   )
 where
 
-import CLC.Stackage.Builder.Package (Package)
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.Package (Package)
 import Data.IORef (IORef)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set (Set)

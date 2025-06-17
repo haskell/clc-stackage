@@ -2,11 +2,11 @@
 
 module Main (main) where
 
-import CLC.Stackage.Builder.Package (Package (name))
 import CLC.Stackage.Runner qualified as Runner
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.OS (Os (Windows), currentOs)
+import CLC.Stackage.Utils.Package (Package (name))
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as C8

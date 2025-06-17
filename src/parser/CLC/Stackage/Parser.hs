@@ -11,8 +11,7 @@ module CLC.Stackage.Parser
 where
 
 import CLC.Stackage.Parser.API
-  ( PackageResponse (name, version),
-    StackageResponse (packages),
+  ( StackageResponse (packages),
   )
 import CLC.Stackage.Parser.API qualified as API
 import CLC.Stackage.Parser.API.CabalConfig qualified as CabalConfig
@@ -21,6 +20,8 @@ import CLC.Stackage.Utils.JSON qualified as JSON
 import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.OS (Os (Linux, Osx, Windows))
 import CLC.Stackage.Utils.OS qualified as OS
+import CLC.Stackage.Utils.Package (Package)
+import CLC.Stackage.Utils.Package qualified as Package
 import Control.Monad (when)
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Foldable (for_)
@@ -33,13 +34,13 @@ import System.OsPath (OsPath, osp)
 
 -- | Retrieves the list of packages, based on
 -- 'CLC.Stackage.Parser.API.stackageUrl'.
-getPackageList :: Logging.Handle -> Maybe OsPath -> IO [PackageResponse]
+getPackageList :: Logging.Handle -> Maybe OsPath -> IO [Package]
 getPackageList hLogger msnapshotPath =
   getPackageListByOs hLogger msnapshotPath OS.currentOs
 
 -- | Prints the package list to a file.
-printPackageList :: Bool -> Maybe Os -> IO ()
-printPackageList incVers mOs = do
+printPackageList :: Maybe Os -> IO ()
+printPackageList mOs = do
   case mOs of
     Just os -> printOsList os
     Nothing -> for_ [minBound .. maxBound] printOsList
@@ -49,23 +50,18 @@ printPackageList incVers mOs = do
     file Windows = [osp|pkgs_windows.txt|]
 
     printOsList os = do
-      pkgs <- getPackageListByOsFmt incVers os
+      pkgs <- getPackageListByOsFmt os
       let txt = T.unlines pkgs
       IO.writeFileUtf8 (file os) txt
 
 -- | Retrieves the package list formatted to text.
-getPackageListByOsFmt :: Bool -> Os -> IO [Text]
-getPackageListByOsFmt incVers =
-  (fmap . fmap) toText
+getPackageListByOsFmt :: Os -> IO [Text]
+getPackageListByOsFmt =
+  (fmap . fmap) Package.toTextInstalled
     . getPackageListByOs Logging.mkDefaultLogger Nothing
-  where
-    toText r =
-      if incVers
-        then r.name <> "-" <> r.version
-        else r.name
 
 -- | Helper in case we want to see what the package set for a given OS is.
-getPackageListByOs :: Logging.Handle -> Maybe OsPath -> Os -> IO [PackageResponse]
+getPackageListByOs :: Logging.Handle -> Maybe OsPath -> Os -> IO [Package]
 getPackageListByOs hLogger msnapshotPath os = do
   excludedPkgs <- getExcludedPkgs os
   let filterExcluded = flip Set.notMember excludedPkgs . (.name)

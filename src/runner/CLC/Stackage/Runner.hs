@@ -11,11 +11,11 @@ import CLC.Stackage.Builder.Env
   ( BuildEnv (progress),
     Progress (failuresRef),
   )
-import CLC.Stackage.Builder.Package (Package)
 import CLC.Stackage.Builder.Writer qualified as Writer
 import CLC.Stackage.Runner.Env (RunnerEnv (completePackageSet))
 import CLC.Stackage.Runner.Env qualified as Env
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.Package (Package)
 import Control.Exception (bracket, throwIO)
 import Control.Monad (when)
 import Data.Foldable (for_)

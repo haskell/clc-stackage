@@ -18,10 +18,10 @@ import CLC.Stackage.Builder.Env
     WriteLogs (WriteLogsCurrent, WriteLogsNone, WriteLogsSaveFailures),
   )
 import CLC.Stackage.Builder.Env qualified as Env
-import CLC.Stackage.Builder.Package qualified as Package
 import CLC.Stackage.Builder.Writer qualified as Writer
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Utils.Package qualified as Package
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
 import Control.Monad (when)
@@ -115,7 +115,7 @@ buildProject env idx pkgs = do
       mconcat
         [ T.pack $ show idx,
           ": ",
-          T.intercalate ", " (Package.toText <$> pkgsList)
+          T.intercalate ", " (Package.toTextInstalled <$> pkgsList)
         ]
     pkgsList = NE.toList pkgs.unPackageGroup
     pkgsSet = Set.fromList pkgsList
