@@ -11,6 +11,7 @@ module CLC.Stackage.Utils.Paths
     generatedCabalProjectLocalPath,
 
     -- * Utils
+    canonicalizePath,
     OsPath.encodeUtf,
     decodeUtfLenient,
     unsafeDecodeUtf,
@@ -20,8 +21,10 @@ where
 import GHC.IO.Encoding.Failure (CodingFailureMode (TransliterateCodingFailure))
 import GHC.IO.Encoding.UTF16 qualified as UTF16
 import GHC.IO.Encoding.UTF8 qualified as UTF8
+import System.Directory.OsPath qualified as Dir
 import System.OsPath (OsPath, osp, (</>))
 import System.OsPath qualified as OsPath
+import System.OsString qualified as OsStr
 
 -- | Leniently decodes OsPath to String.
 decodeUtfLenient :: OsPath -> String
@@ -36,6 +39,21 @@ unsafeDecodeUtf :: OsPath -> FilePath
 unsafeDecodeUtf p = case OsPath.decodeUtf p of
   Just fp -> fp
   Nothing -> error $ "Error decoding ospath: " <> show p
+
+-- | Calls canonicalizePath, after manually expanding tilde (~) to the home
+-- directory. The latter usually shouldn't be needed, as the shell normally
+-- performs such expansions before the string makes it to the program.
+-- But when it is part of an argument e.g.
+--
+--   --cabal-path=~/...
+--
+-- it is not expanded.
+canonicalizePath :: OsPath -> IO OsPath
+canonicalizePath p = case OsStr.stripPrefix [osp|~/|] p of
+  Nothing -> Dir.canonicalizePath p
+  Just rest -> do
+    home <- Dir.getHomeDirectory
+    Dir.canonicalizePath $ home </> rest
 
 -- | Output directory.
 outputDir :: OsPath
