@@ -45,6 +45,8 @@ data Args = MkArgs
   { -- | If given, batches packages together so we build more than one.
     -- Defaults to batching everything together in the same group.
     batch :: Maybe Int,
+    -- | Global options to pass to cabal e.g. --store-dir.
+    cabalGlobalOpts :: [String],
     -- | Options to pass to cabal e.g. --semaphore.
     cabalOpts :: [String],
     -- | Optional path to cabal executable.
@@ -123,7 +125,7 @@ getArgs = OA.execParser parserInfoArgs
             ],
           mkExample
             [ "# Run with custom cabal",
-              "$ clc-stackage --cabal-path=path/to/cabal --cabal-options='--store-dir=path/to/store'"
+              "$ clc-stackage --cabal-path=path/to/cabal --cabal-global-options='--store-dir=path/to/store'"
             ],
           mkExample
             [ "# Run with custom snapshot",
@@ -139,6 +141,7 @@ parseCliArgs :: Parser Args
 parseCliArgs =
   ( do
       batch <- parseBatch
+      cabalGlobalOpts <- parseCabalGlobalOpts
       cabalOpts <- parseCabalOpts
       cabalPath <- parseCabalPath
       colorLogs <- parseColorLogs
@@ -153,6 +156,7 @@ parseCliArgs =
       pure $
         MkArgs
           { batch,
+            cabalGlobalOpts,
             cabalOpts,
             cabalPath,
             colorLogs,
@@ -186,6 +190,24 @@ parseBatch =
           ]
       )
 
+parseCabalGlobalOpts :: Parser [String]
+parseCabalGlobalOpts =
+  OA.option
+    readOpts
+    ( mconcat
+        [ OA.long "cabal-global-options",
+          OA.metavar "ARGS...",
+          OA.value [],
+          mkHelp $
+            mconcat
+              [ "Global arguments to pass to cabal e.g. '--store-dir=path/to/store'. ",
+                "These precede the build command."
+              ]
+        ]
+    )
+  where
+    readOpts = Str.words <$> OA.str
+
 parseCabalOpts :: Parser [String]
 parseCabalOpts =
   OA.option
@@ -194,7 +216,7 @@ parseCabalOpts =
         [ OA.long "cabal-options",
           OA.metavar "ARGS...",
           OA.value [],
-          mkHelp "Quoted arguments to pass to cabal e.g. '--semaphore --verbose=1'"
+          mkHelp "Quoted arguments to pass to cabal e.g. '--semaphore --verbose=1'."
         ]
     )
   where

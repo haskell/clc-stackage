@@ -46,7 +46,7 @@ import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
-import Control.Monad (unless)
+import Control.Monad (join, unless)
 import Data.Bool (Bool (False, True), not)
 import Data.Foldable (Foldable (foldl'))
 import Data.IORef (newIORef, readIORef)
@@ -61,7 +61,7 @@ import System.Directory.OsPath qualified as Dir
 import System.Exit (ExitCode (ExitSuccess))
 import System.OsPath (osp)
 import System.OsPath qualified as OsP
-import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (++), (.), (<$>), (<>))
+import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (.), (<$>), (<>))
 
 -- | Args used for building all packages.
 data RunnerEnv = MkRunnerEnv
@@ -103,21 +103,27 @@ setup hLoggerRaw modifyPackages = do
 
   -- Set up build args for cabal, filling in missing defaults
   let buildArgs =
-        "build"
-          : keepGoingArg
-          ++ cliArgs.cabalOpts
+        join
+          [ cliArgs.cabalGlobalOpts,
+            ["build"],
+            keepGoingArg,
+            cliArgs.cabalOpts
+          ]
 
       -- when packageFailFast is false, add keep-going so that we build as many
       -- packages in the group.
       keepGoingArg = ["--keep-going" | not cliArgs.packageFailFast]
 
-  let cabalPathRaw = fromMaybe [osp|cabal|] cliArgs.cabalPath
+  cabalPathRaw <- case cliArgs.cabalPath of
+    Nothing -> pure [osp|cabal|]
+    Just p -> Paths.canonicalizePath p
+
   cabalPath <-
     Dir.findExecutable cabalPathRaw >>= \case
       -- TODO: It would be nice to avoid the decode here and keep everything
       -- in OsPath, though that is blocked until process support OsPath.
       Just p -> OsP.decodeUtf p
-      Nothing -> Ex.throwText "Cabal not found"
+      Nothing -> Ex.throwText $ "Cabal not found: " <> T.pack (show cabalPathRaw)
 
   successesRef <- newIORef Set.empty
   failuresRef <- newIORef Set.empty
