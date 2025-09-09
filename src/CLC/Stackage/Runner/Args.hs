@@ -140,18 +140,11 @@ getArgs = OA.execParser parserInfoArgs
 parseCliArgs :: Parser Args
 parseCliArgs =
   ( do
-      batch <- parseBatch
-      cabalGlobalOpts <- parseCabalGlobalOpts
-      cabalOpts <- parseCabalOpts
-      cabalPath <- parseCabalPath
-      colorLogs <- parseColorLogs
-      groupFailFast <- parseGroupFailFast
-      noCache <- parseNoCache
-      noCleanup <- parseNoCleanup
-      packageFailFast <- parsePackageFailFast
-      retryFailures <- parseRetryFailures
-      snapshotPath <- parseSnapshotPath
-      writeLogs <- parseWriteLogs
+      ~(cabalGlobalOpts, cabalOpts, cabalPath) <- parseCabalGroup
+      ~(noCache, retryFailures) <- parseCacheGroup
+      ~(groupFailFast, packageFailFast) <- parseFailuresGroup
+      ~(batch, snapshotPath) <- parseMiscGroup
+      ~(colorLogs, noCleanup, writeLogs) <- parseOutputGroup
 
       pure $
         MkArgs
@@ -170,6 +163,38 @@ parseCliArgs =
           }
   )
     <**> OA.helper
+  where
+    parseCabalGroup =
+      OA.parserOptionGroup "Cabal options:" $
+        (,,)
+          <$> parseCabalGlobalOpts
+          <*> parseCabalOpts
+          <*> parseCabalPath
+
+    parseCacheGroup =
+      OA.parserOptionGroup "Cache options:" $
+        (,)
+          <$> parseNoCache
+          <*> parseRetryFailures
+
+    parseFailuresGroup =
+      OA.parserOptionGroup "Failure options:" $
+        (,)
+          <$> parseGroupFailFast
+          <*> parsePackageFailFast
+
+    parseMiscGroup =
+      OA.parserOptionGroup "Misc options:" $
+        (,)
+          <$> parseBatch
+          <*> parseSnapshotPath
+
+    parseOutputGroup =
+      OA.parserOptionGroup "Output options:" $
+        (,,)
+          <$> parseColorLogs
+          <*> parseNoCleanup
+          <*> parseWriteLogs
 
 parseBatch :: Parser (Maybe Int)
 parseBatch =
@@ -181,10 +206,10 @@ parseBatch =
             OA.metavar "NAT",
             mkHelp $
               mconcat
-                [ "If given N, divides the package set into groups of at ",
+                [ "Divides the package set into groups of at ",
                   "most size N. This can be useful when building everything ",
-                  "in one build is infeasible, or taking advantage of the ",
-                  "better status reporting. No option means we batch ",
+                  "in one build is infeasible, or we want to take advantage of ",
+                  "the better status reporting. No option means we batch ",
                   "everything in the same group."
                 ]
           ]
@@ -264,7 +289,7 @@ parseGroupFailFast =
   where
     helpTxt =
       mconcat
-        [ "If true, the first group that fails to completely build stops ",
+        [ "If true, the first batch group that fails to completely build stops ",
           "clc-stackage."
         ]
 
@@ -297,13 +322,13 @@ parsePackageFailFast =
   OA.switch
     ( mconcat
         [ OA.long "package-fail-fast",
-          mkHelp helpTxt
+          mkHelpNoLine helpTxt
         ]
     )
   where
     helpTxt =
       mconcat
-        [ "If true, the first package that fails _within_ a package group ",
+        [ "If true, the first package that fails _within_ a batch group ",
           "will cause the entire group to fail. We then move to the next ",
           "group, as normal. The default (off) behavior is equivalent to ",
           "cabal's --keep-going)."
@@ -314,7 +339,7 @@ parseRetryFailures =
   OA.switch
     ( mconcat
         [ OA.long "retry-failures",
-          mkHelp "Retries failures from the cache. Incompatible with --no-cache. "
+          mkHelpNoLine "Retries failures from the cache. Incompatible with --no-cache. "
         ]
     )
 
@@ -326,9 +351,9 @@ parseSnapshotPath =
       ( mconcat
           [ OA.long "snapshot-path",
             OA.metavar "PATH",
-            mkHelp $
+            mkHelpNoLine $
               mconcat
-                [ "Optional path to snapshot file. If given, this overrides ",
+                [ "Optional path to snapshot file. This overrides ",
                   "the stackage snapshot; that is, we use the file's contents, ",
                   "rather than the stackage server. The file should be ",
                   "formatted similar to ",
@@ -348,7 +373,7 @@ parseWriteLogs =
       ( mconcat
           [ OA.long "write-logs",
             OA.metavar "(none | current | save-failures)",
-            mkHelp $
+            mkHelpNoLine $
               mconcat
                 [ "Determines what cabal logs to write to the output/ ",
                   "directory. 'None' writes nothing. 'Current' writes stdout ",
@@ -383,5 +408,13 @@ mkHelp :: String -> Mod f a
 mkHelp =
   OA.helpDoc
     . fmap (<> Pretty.hardline)
+    . Chunk.unChunk
+    . Chunk.paragraph
+
+-- The last entry in each option group should use this, to prevent an extra
+-- new line.
+mkHelpNoLine :: String -> Mod f a
+mkHelpNoLine =
+  OA.helpDoc
     . Chunk.unChunk
     . Chunk.paragraph
