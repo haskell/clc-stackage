@@ -35,7 +35,7 @@ jobs:
           cabal configure --enable-tests --ghc-options -Werror
 
       - name: Build executable
-        run: cabal build clc-stackage
+        run: cabal build exe:clc-stackage
 
       - name: Unit Tests
         id: unit

@@ -12,32 +12,34 @@ Futhermore, we allow for building subsets of the entire stackage package set wit
 
 ## Components
 
+The `clc-stackage` library is namespaced by functionality:
+
 ### utils
 
-`utils` is a library containing common utilities e.g. logging and hardcoded file paths.
+`CLC.Stackage.Utils` ontains common utilities e.g. logging and hardcoded file paths.
 
 ### parser
 
-`parser` contains the parsing functionality. In particular, `parser` is responsible for querying stackage's REST endpoint and retrieving the package set. That package set is then filtered according to [excluded_pkgs.json](excluded_pkgs.json). The primary function is:
+`CLC.Stackage.Parser` contains the parsing functionality. In particular, `parser` is responsible for querying stackage's REST endpoint and retrieving the package set. That package set is then filtered according to [excluded_pkgs.json](excluded_pkgs.json). The primary function is:
 
 ```haskell
 -- CLC.Stackage.Parser
-getPackageList :: IO [PackageResponse]
+getPackageList :: Logging.Handle -> Maybe OsPath -> IO [Package]
 ```
 
 If you want to get the list of the packages to be built (i.e. stackage_snapshot - excluded_packages), load the parser into the repl with `cabal repl parser`, and run the following:
 
 ```haskell
 -- CLC.Stackage.Parser
--- printPackageList :: Bool -> Maybe Os -> IO ()
-λ. printPackageList True Nothing
+-- printPackageList :: Maybe Os -> IO ()
+λ. printPackageList Nothing
 ```
 
 This will write the package list used for each OS to `pkgs_<os>.txt`.
 
 ### builder
 
-`builder` is responsible for building a given package set. The primary functions are:
+`CLC.Stackage.Builder` is responsible for building a given package set. The primary functions are:
 
 ```haskell
 -- CLC.Stackage.Builder
@@ -58,7 +60,7 @@ That is:
 
 ### runner
 
-`runner` orchestrates everything. The primary function is:
+`CLC.Stackage.Runner` orchestrates everything. The primary function is:
 
 ```haskell
 run :: Logging.Handle -> IO ()
