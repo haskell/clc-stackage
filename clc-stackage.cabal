@@ -26,9 +26,23 @@ common common-lang
 
   default-language:   GHC2021
 
-library utils
+library
   import:          common-lang
   exposed-modules:
+    CLC.Stackage.Builder
+    CLC.Stackage.Builder.Batch
+    CLC.Stackage.Builder.Env
+    CLC.Stackage.Builder.Process
+    CLC.Stackage.Builder.Writer
+    CLC.Stackage.Parser
+    CLC.Stackage.Parser.API
+    CLC.Stackage.Parser.API.CabalConfig
+    CLC.Stackage.Parser.API.Common
+    CLC.Stackage.Parser.API.JSON
+    CLC.Stackage.Runner
+    CLC.Stackage.Runner.Args
+    CLC.Stackage.Runner.Env
+    CLC.Stackage.Runner.Report
     CLC.Stackage.Utils.Exception
     CLC.Stackage.Utils.IO
     CLC.Stackage.Utils.JSON
@@ -38,103 +52,37 @@ library utils
     CLC.Stackage.Utils.Paths
 
   build-depends:
-    , aeson            >=2.0       && <2.3
-    , aeson-pretty     ^>=0.8.9
-    , base             >=4.16.0.0  && <4.22
-    , bytestring       >=0.10.12.0 && <0.13
-    , deepseq          >=1.4.6.0   && <1.6
-    , directory        ^>=1.3.5.0
-    , file-io          ^>=0.1.0.0
-    , filepath         >=1.5.0.0   && <1.6
-    , os-string        ^>=2.0.0
-    , pretty-terminal  ^>=0.1.0.0
-    , text             >=1.2.3.2   && <2.2
-    , time             >=1.9.3     && <1.15
+    , aeson                 >=2.0       && <2.3
+    , aeson-pretty          ^>=0.8.9
+    , base                  >=4.16.0.0  && <4.22
+    , bytestring            >=0.10.12.0 && <0.13
+    , containers            >=0.6.3.1   && <0.9
+    , deepseq               >=1.4.6.0   && <1.6
+    , directory             ^>=1.3.5.0
+    , file-io               ^>=0.1.0.0
+    , filepath              >=1.5.0.0   && <1.6
+    , http-client           >=0.5.9     && <0.8
+    , http-client-tls       ^>=0.3
+    , http-types            ^>=0.12.3
+    , optparse-applicative  >=0.16.1.0  && <0.19
+    , os-string             ^>=2.0.0
+    , pretty-terminal       ^>=0.1.0.0
+    , process               ^>=1.6.9.0
+    , text                  >=1.2.3.2   && <2.2
+    , time                  >=1.9.3     && <1.15
 
-  hs-source-dirs:  src/utils
-
-library parser
-  import:          common-lang
-  exposed-modules:
-    CLC.Stackage.Parser
-    CLC.Stackage.Parser.API
-    CLC.Stackage.Parser.API.CabalConfig
-    CLC.Stackage.Parser.API.Common
-    CLC.Stackage.Parser.API.JSON
-
-  build-depends:
-    , aeson
-    , base
-    , bytestring
-    , containers       >=0.6.3.1 && <0.9
-    , deepseq
-    , filepath
-    , http-client      >=0.5.9   && <0.8
-    , http-client-tls  ^>=0.3
-    , http-types       ^>=0.12.3
-    , text
-    , utils
-
-  hs-source-dirs:  src/parser
-  ghc-options:     -Wunused-packages
-
-library builder
-  import:          common-lang
-  exposed-modules:
-    CLC.Stackage.Builder
-    CLC.Stackage.Builder.Batch
-    CLC.Stackage.Builder.Env
-    CLC.Stackage.Builder.Process
-    CLC.Stackage.Builder.Writer
-
-  build-depends:
-    , base
-    , containers
-    , directory
-    , filepath
-    , process     ^>=1.6.9.0
-    , text
-    , utils
-
-  hs-source-dirs:  src/builder
-  ghc-options:     -Wunused-packages
-
-library runner
-  import:          common-lang
-  exposed-modules:
-    CLC.Stackage.Runner
-    CLC.Stackage.Runner.Args
-    CLC.Stackage.Runner.Env
-    CLC.Stackage.Runner.Report
-
-  build-depends:
-    , aeson
-    , base
-    , builder
-    , containers
-    , directory
-    , filepath
-    , optparse-applicative  >=0.16.1.0 && <0.19
-    , parser
-    , pretty-terminal
-    , text
-    , time
-    , utils
-
-  hs-source-dirs:  src/runner
-  ghc-options:     -Wunused-packages
+  hs-source-dirs:  src
 
 executable clc-stackage
   import:         common-lang
   main-is:        Main.hs
   build-depends:
     , base
-    , runner
+    , clc-stackage
     , terminal-size  ^>=0.3.4
-    , utils
 
   hs-source-dirs: ./app
-  ghc-options:    -threaded -with-rtsopts=-N -Wunused-packages
+  ghc-options:    -threaded -with-rtsopts=-N
 
 library test-utils
   import:          common-lang
@@ -145,7 +93,6 @@ library test-utils
     , tasty-golden  ^>=2.3.1.1
 
   hs-source-dirs:  test/utils
-  ghc-options:     -Wunused-packages
 
 test-suite unit
   import:         common-lang
@@ -160,22 +107,19 @@ test-suite unit
 
   build-depends:
     , base
-    , builder
+    , clc-stackage
     , containers
     , deepseq
     , filepath
     , http-client-tls
-    , parser
-    , runner
     , tasty
     , tasty-golden
     , tasty-hunit      >=0.9 && <0.11
     , test-utils
     , time
-    , utils
 
   hs-source-dirs: test/unit
-  ghc-options:    -threaded -with-rtsopts=-N -Wunused-packages
+  ghc-options:    -threaded -with-rtsopts=-N
 
 test-suite functional
   import:         common-lang
@@ -183,21 +127,15 @@ test-suite functional
   main-is:        Main.hs
   build-depends:
     , base
-    , builder
     , bytestring
+    , clc-stackage
     , containers
     , env-guard     ^>=0.2
     , filepath
-    , runner
     , tasty
     , tasty-golden
     , test-utils
     , text
     , time
-    , utils
 
   hs-source-dirs: test/functional
-
--- For some reason -Wunused-packages is complaining about clc-stackage
--- being an unnecessary dep for the functional test suite...hence it is
--- removed from cabal.project and added manually to other targets.

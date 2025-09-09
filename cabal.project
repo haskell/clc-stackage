@@ -17,6 +17,7 @@ program-options
     -Wprepositive-qualified-module
     -Wredundant-constraints
     -Wunused-binds
+    -Wunused-packages
     -Wunused-type-patterns
     -Wno-unticked-promoted-constructors
 
