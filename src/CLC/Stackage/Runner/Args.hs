@@ -65,6 +65,8 @@ data Args = MkArgs
     -- | If true, the first package that fails _within_ a package group will
     -- cause the entire group to fail.
     packageFailFast :: Bool,
+    -- | If true, prints the package set that will be used, and exits.
+    printPackageSet :: Bool,
     -- | Whether to retry packages that failed.
     retryFailures :: Bool,
     -- | Optional path to snapshot file. If given, we use the file's contents
@@ -143,7 +145,7 @@ parseCliArgs =
       ~(cabalGlobalOpts, cabalOpts, cabalPath) <- parseCabalGroup
       ~(noCache, retryFailures) <- parseCacheGroup
       ~(groupFailFast, packageFailFast) <- parseFailuresGroup
-      ~(batch, snapshotPath) <- parseMiscGroup
+      ~(batch, printPackageSet, snapshotPath) <- parseMiscGroup
       ~(colorLogs, noCleanup, writeLogs) <- parseOutputGroup
 
       pure $
@@ -157,6 +159,7 @@ parseCliArgs =
             noCache,
             noCleanup,
             packageFailFast,
+            printPackageSet,
             retryFailures,
             snapshotPath,
             writeLogs
@@ -185,8 +188,9 @@ parseCliArgs =
 
     parseMiscGroup =
       OA.parserOptionGroup "Misc options:" $
-        (,)
+        (,,)
           <$> parseBatch
+          <*> parsePrintPackageSet
           <*> parseSnapshotPath
 
     parseOutputGroup =
@@ -255,7 +259,7 @@ parseCabalPath =
       ( mconcat
           [ OA.long "cabal-path",
             OA.metavar "PATH",
-            mkHelp "Optional path to cabal executable."
+            mkHelpNoLine "Optional path to cabal executable."
           ]
       )
 
@@ -333,6 +337,22 @@ parsePackageFailFast =
           "group, as normal. The default (off) behavior is equivalent to ",
           "cabal's --keep-going)."
         ]
+
+parsePrintPackageSet :: Parser Bool
+parsePrintPackageSet =
+  OA.switch
+    ( mconcat
+        [ OA.long "print-package-set",
+          mkHelp helpTxt
+        ]
+    )
+  where
+    helpTxt =
+      mconcat
+        [ "Instead of running the builder, prints the package set that will ",
+          "be used and exits."
+        ]
+
 
 parseRetryFailures :: Parser Bool
 parseRetryFailures =
