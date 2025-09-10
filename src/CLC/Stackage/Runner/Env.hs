@@ -43,10 +43,11 @@ import CLC.Stackage.Runner.Report qualified as Report
 import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
+import CLC.Stackage.Parser qualified as Parser
 import CLC.Stackage.Utils.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
-import Control.Monad (join, unless)
+import Control.Monad (join, unless, when)
 import Data.Bool (Bool (False, True), not)
 import Data.Foldable (Foldable (foldl'))
 import Data.IORef (newIORef, readIORef)
@@ -100,6 +101,11 @@ setup hLoggerRaw modifyPackages = do
 
   -- Update logger with CLI color param.
   let hLogger = hLoggerRaw {Logging.color = colorLogs}
+
+  when cliArgs.printPackageSet $ do
+    Logging.putTimeInfoStr hLogger "Printing package set"
+    Parser.printPackageList Nothing
+    throwIO ExitSuccess
 
   -- Set up build args for cabal, filling in missing defaults
   let buildArgs =

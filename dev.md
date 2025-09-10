@@ -27,13 +27,7 @@ The `clc-stackage` library is namespaced by functionality:
 getPackageList :: Logging.Handle -> Maybe OsPath -> IO [Package]
 ```
 
-If you want to get the list of the packages to be built (i.e. stackage_snapshot - excluded_packages), load the parser into the repl with `cabal repl parser`, and run the following:
-
-```haskell
--- CLC.Stackage.Parser
--- printPackageList :: Maybe Os -> IO ()
-λ. printPackageList Nothing
-```
+If you want to get the list of the packages to be built (i.e. stackage_snapshot - excluded_packages), run `clc-stackage --print-package-set`.
 
 This will write the package list used for each OS to `pkgs_<os>.txt`.
 
