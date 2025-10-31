@@ -39,6 +39,7 @@ library
     CLC.Stackage.Parser.API.CabalConfig
     CLC.Stackage.Parser.API.Common
     CLC.Stackage.Parser.API.JSON
+    CLC.Stackage.Parser.Utils
     CLC.Stackage.Runner
     CLC.Stackage.Runner.Args
     CLC.Stackage.Runner.Env
