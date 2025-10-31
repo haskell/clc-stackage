@@ -11,6 +11,4 @@ main = do
   let hLogger = Logging.mkDefaultLogger
   case mWidth of
     Just w -> Runner.run $ hLogger {Logging.terminalWidth = w}
-    Nothing -> do
-      Logging.putTimeInfoStr hLogger "Failed detecting terminal width"
-      Runner.run hLogger
+    Nothing -> Runner.run hLogger

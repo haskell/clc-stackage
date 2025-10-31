@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module CLC.Stackage.Runner.Args
   ( Args (..),
     ColorLogs (..),
@@ -8,9 +10,16 @@ where
 import CLC.Stackage.Builder.Env
   ( WriteLogs (WriteLogsCurrent, WriteLogsNone, WriteLogsSaveFailures),
   )
+import CLC.Stackage.Utils.Paths qualified as Paths
+import Control.Exception (IOException, try)
+import Data.Either (fromRight)
+import Data.List qualified as L
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String qualified as Str
+import GHC.IO.Exception (ExitCode (ExitFailure, ExitSuccess))
 import Options.Applicative
   ( Mod,
+    OptionFields,
     Parser,
     ParserInfo
       ( ParserInfo,
@@ -25,13 +34,17 @@ import Options.Applicative
     (<**>),
   )
 import Options.Applicative qualified as OA
+import Options.Applicative.Builder.Completer (Completer)
+import Options.Applicative.Builder.Completer qualified as OAC
 import Options.Applicative.Help (Doc)
 import Options.Applicative.Help.Chunk (Chunk (Chunk))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
 import Options.Applicative.Types (ArgPolicy (Intersperse), ReadM)
+import System.Directory.OsPath qualified as Dir
 import System.OsPath (OsPath)
 import System.OsPath qualified as OsP
+import System.Process qualified as P
 
 -- | Log coloring option.
 data ColorLogs
@@ -92,7 +105,9 @@ getArgs = OA.execParser parserInfoArgs
           infoPolicy = Intersperse
         }
     headerTxt = Just "clc-stackage: Builds all packages in a stackage snapshot."
-    desc =
+    desc = intro <> completions <> examples
+
+    intro =
       Chunk.vsepChunks
         [ Chunk.paragraph $
             mconcat
@@ -110,34 +125,63 @@ getArgs = OA.execParser parserInfoArgs
                 "off."
               ],
           Chunk.paragraph "Alternatively, to build everything in one go, run:",
-          Pretty.indent 2 <$> Chunk.paragraph "clc-stackage",
+          Pretty.indent 2 <$> Chunk.paragraph "$ clc-stackage",
           Chunk.paragraph $
             mconcat
               [ "This will build everything in one package group, and pass ",
                 "--keep-going to cabal."
-              ],
+              ]
+        ]
+
+    completions =
+      Chunk.vsepChunks
+        [ line,
+          Chunk.paragraph "Shell completions are available e.g.",
+          Pretty.indent 2 <$> Chunk.stringChunk "$ source <(clc-stackage --bash-completion-script `which clc-stackage`)"
+        ]
+
+    examples =
+      Chunk.vsepChunks
+        [ line,
           Chunk.paragraph "Examples:",
           mkExample
-            [ "# Basic example",
+            [ "1. Basic example:",
+              "",
               "$ clc-stackage"
             ],
           mkExample
-            [ "# Batch with groups of 100 and some cabal options",
+            [ "2. Batch with groups of 100 and some cabal options:",
+              "",
               "$ clc-stackage --batch 100 --cabal-options='--semaphore --verbose=1'"
             ],
           mkExample
-            [ "# Run with custom cabal",
-              "$ clc-stackage --cabal-path=path/to/cabal --cabal-global-options='--store-dir=path/to/store'"
+            [ "3. Run with custom cabal:",
+              "",
+              "$ clc-stackage \\",
+              "  --cabal-path=path/to/cabal \\",
+              "  --cabal-global-options='--store-dir=path/to/store'"
             ],
           mkExample
-            [ "# Run with custom snapshot",
+            [ "4. Run with custom snapshot:",
+              "",
               "$ clc-stackage --snapshot-path=path/to/snapshot-file"
             ]
         ]
-    mkExample :: [String] -> Chunk Doc
-    mkExample =
+
+    mkExample :: NonEmpty String -> Chunk Doc
+    mkExample = identPara 2 5
+
+    identPara :: Int -> Int -> NonEmpty String -> Chunk Doc
+    identPara hIndent lIndent (h :| xs) =
       Chunk.vcatChunks
-        . fmap (fmap (Pretty.indent 2) . Chunk.stringChunk)
+        . (\ys -> toChunk hIndent h : ys)
+        . fmap (toChunk lIndent)
+        $ xs
+
+    toChunk _ "" = line
+    toChunk i other = fmap (Pretty.indent i) . Chunk.stringChunk $ other
+
+    line = Chunk (Just Pretty.softline)
 
 parseCliArgs :: Parser Args
 parseCliArgs =
@@ -259,6 +303,7 @@ parseCabalPath =
       ( mconcat
           [ OA.long "cabal-path",
             OA.metavar "PATH",
+            OA.completer compgenCwdPathsCompleter,
             mkHelpNoLine "Optional path to cabal executable."
           ]
       )
@@ -269,7 +314,8 @@ parseColorLogs =
     readColorLogs
     ( mconcat
         [ OA.long "color-logs",
-          OA.metavar "(off | on | detect)",
+          OA.metavar "(detect | on | off)",
+          OA.completeWith ["detect", "on", "off"],
           OA.value ColorLogsDetect,
           mkHelp "Determines whether we color logs. Defaults to detect."
         ]
@@ -280,7 +326,7 @@ parseColorLogs =
         "off" -> pure ColorLogsOff
         "on" -> pure ColorLogsOn
         "detect" -> pure ColorLogsDetect
-        bad -> fail $ "Expected one of (off | on | detect), received: " <> bad
+        bad -> fail $ "Expected one of (detect | on | off), received: " <> bad
 
 parseGroupFailFast :: Parser Bool
 parseGroupFailFast =
@@ -353,7 +399,6 @@ parsePrintPackageSet =
           "be used and exits."
         ]
 
-
 parseRetryFailures :: Parser Bool
 parseRetryFailures =
   OA.switch
@@ -371,6 +416,7 @@ parseSnapshotPath =
       ( mconcat
           [ OA.long "snapshot-path",
             OA.metavar "PATH",
+            OA.completer compgenCwdPathsCompleter,
             mkHelpNoLine $
               mconcat
                 [ "Optional path to snapshot file. This overrides ",
@@ -392,30 +438,31 @@ parseWriteLogs =
       readWriteLogs
       ( mconcat
           [ OA.long "write-logs",
-            OA.metavar "(none | current | save-failures)",
-            mkHelpNoLine $
-              mconcat
-                [ "Determines what cabal logs to write to the output/ ",
-                  "directory. 'None' writes nothing. 'Current' writes stdout ",
-                  "and stderr for the currently building project. ",
-                  "'Save-failures' is the same as 'current' except the files ",
-                  "are not deleted if the build failed. Defaults to ",
-                  "save-failures."
-                ]
+            OA.metavar "(current | save-failures | off)",
+            OA.completeWith ["current", "save-failures", "off"],
+            helpTxt
           ]
       )
   where
     readWriteLogs =
       OA.str >>= \case
-        "none" -> pure WriteLogsNone
+        "off" -> pure WriteLogsNone
         "current" -> pure WriteLogsCurrent
         "save-failures" -> pure WriteLogsSaveFailures
         other ->
           fail $
             mconcat
-              [ "Expected one of (none | current | save-failures), received: ",
+              [ "Expected one of (current | save-failures | off), received: ",
                 other
               ]
+
+    helpTxt =
+      itemizeNoLine
+        [ "Determines what cabal logs to write to the output/ directory. 'save-failures' is the default.",
+          "current: Writes stdout and sdterr for the currently building project.",
+          "save-failures: Same as 'current', except the files are not deleted if the build failed.",
+          "off: Writes nothing."
+        ]
 
 readOsPath :: ReadM OsPath
 readOsPath = do
@@ -438,3 +485,64 @@ mkHelpNoLine =
   OA.helpDoc
     . Chunk.unChunk
     . Chunk.paragraph
+
+-- | 'itemize' that does not append a trailing newline. Useful for the last
+-- option in a group, as groups already start a newline.
+itemizeNoLine :: NonEmpty String -> Mod OptionFields a
+itemizeNoLine =
+  OA.helpDoc
+    . Chunk.unChunk
+    . itemizeHelper
+
+itemizeHelper :: NonEmpty String -> Chunk Doc
+itemizeHelper (intro :| ds) =
+  Chunk.vcatChunks $
+    Chunk.paragraph intro
+      : toChunk Pretty.softline
+      : (toItem <$> ds)
+  where
+    toItem d =
+      fmap (Pretty.nest 2)
+        . Chunk.paragraph
+        $ ("- " <> d)
+
+    toChunk :: a -> Chunk a
+    toChunk = Chunk . Just
+
+-- | Paths completer that tries compgen first, then falls back to
+-- directory.
+compgenCwdPathsCompleter :: Completer
+compgenCwdPathsCompleter = bashCompleterQuiet "file" <> cwdPathsCompleter
+
+-- | Like optparse's bashCompleter, except this does not report completions
+-- errors, which can otherwise make the output difficult to read.
+bashCompleterQuiet :: String -> Completer
+bashCompleterQuiet action = OAC.mkCompleter $ \word -> do
+  let cmd = L.unwords ["compgen", "-A", action, "--", OAC.requote word]
+  (ec, out, _err) <- P.readCreateProcessWithExitCode (P.shell cmd) ""
+  pure $ case ec of
+    ExitFailure _ -> []
+    ExitSuccess -> L.lines out
+
+-- | Paths completer that uses directory.
+cwdPathsCompleter :: Completer
+cwdPathsCompleter = OAC.mkCompleter $ \word -> do
+  eFiles <- tryIO $ do
+    cwd <- Dir.getCurrentDirectory
+    Dir.listDirectory cwd
+
+  let files = fromRight [] eFiles
+
+  pure $ foldr (go word) [] files
+  where
+    go :: String -> OsPath -> [String] -> [String]
+    go word p acc = do
+      let pStr = Paths.decodeUtfLenient p
+          matchesPat = word `L.isPrefixOf` pStr
+
+      if matchesPat
+        then pStr : acc
+        else acc
+
+tryIO :: IO a -> IO (Either IOException a)
+tryIO = try
