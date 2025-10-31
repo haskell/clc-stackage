@@ -15,6 +15,8 @@ import CLC.Stackage.Parser.API
   )
 import CLC.Stackage.Parser.API qualified as API
 import CLC.Stackage.Parser.API.CabalConfig qualified as CabalConfig
+import CLC.Stackage.Parser.Utils qualified as Utils
+import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.JSON qualified as JSON
 import CLC.Stackage.Utils.Logging qualified as Logging
@@ -88,7 +90,7 @@ getPackageListByOs hLogger msnapshotPath os = do
 
 getExcludedPkgs :: Os -> IO (Set Text)
 getExcludedPkgs os = do
-  contents <- IO.readBinaryFile path
+  contents <- Ex.throwLeft =<< Utils.stripComments <$> IO.readBinaryFile path
 
   excluded <- case JSON.decode contents of
     Left err -> fail err
@@ -96,7 +98,7 @@ getExcludedPkgs os = do
 
   pure $ Set.fromList (excluded.all ++ osSel excluded)
   where
-    path = [osp|excluded_pkgs.json|]
+    path = [osp|excluded_pkgs.jsonc|]
 
     osSel :: Excluded -> [Text]
     osSel = case os of
