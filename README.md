@@ -14,7 +14,9 @@ An impact assessment is due when
 
 The procedure is as follows:
 
-1. Rebase changes, mandated by your proposal, atop of `ghc-9.10` branch.
+1. Rebase changes, mandated by your proposal, atop of `ghc-9.10.2` tag. Mind: the branch `ghc-9.10` is not okay since different minor versions
+   may ship different boot libraries. Mind that you want to probably also use the default flavour (not e.g. `devel2` as that may also cause
+   issues)
 
 2. Compile a patched GHC, say, `~/ghc/_build/stage1/bin/ghc`.
 
@@ -36,6 +38,8 @@ The procedure is as follows:
     * You can interrupt `cabal` at any time and rerun again later.
     * Consider setting `--jobs` to retain free CPU cores for other tasks.
     * Full build requires roughly 7 Gb of free disk space.
+    * if the build fails with an error about max amount of arguments in `gcc`, run again, 
+      but with smaller batch size. 250 worked well for me.
 
     To get an idea of the current progress, we can run the following commands
     on the log file:
