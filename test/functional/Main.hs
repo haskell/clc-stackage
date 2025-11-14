@@ -98,7 +98,7 @@ modifyPackages = filter (\p -> Set.member p.name pkgs)
       Set.fromList
         [ "cborg",
           "clock",
-          "mtl",
+          "extra",
           "optics-core",
           "profunctors"
         ]

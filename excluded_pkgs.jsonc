@@ -12,10 +12,22 @@
     "ALUT",
     "amqp-utils",
     "arbtt",
+    "array", // see NOTE: [Boot packages]
+    // NOTE: [Boot packages]
+    //
+    // Boot packages are excluded from directly building here -- and having
+    // their constraints written, see excluded_constraints.jsonc -- because
+    // their versions are not stable within the same major ghc version,
+    // and a version mismatch will cause a build failure whenever ghc
+    // is in the build plan (which is true for stackage).
+    //
+    // Packages taken from:
+    // https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/libraries/version-history
     "base",
     "beam-postgres",
     "bench",
     "bhoogle",
+    "binary", // see NOTE: [Boot packages]
     "bindings-libzip",
     "blas-carray",
     "blas-comfort-array",
@@ -26,13 +38,16 @@
     "bugsnag",
     "bugsnag-wai",
     "bugsnag-yesod",
+    "bytestring", // see NOTE: [Boot packages]
     "c2hs",
+    "Cabal", // see NOTE: [Boot packages]
     "cabal-clean",
     "cabal-flatpak",
     "cabal-install",
     "cabal-install-solver",
     "cabal-rpm",
     "cabal-sort",
+    "Cabal-syntax", // see NOTE: [Boot packages]
     "cabal2nix",
     "calendar-recycling",
     "Clipboard",
@@ -40,6 +55,7 @@
     "comfort-blas",
     "comfort-fftw",
     "comfort-glpk",
+    "containers", // see NOTE: [Boot packages]
     "core-telemetry",
     "countdown-numbers-game",
     "cql-io",
@@ -48,7 +64,9 @@
     "cuda",
     "cutter",
     "dbcleaner",
+    "deepseq", // see NOTE: [Boot packages]
     "diagrams-svg",
+    "directory", // see NOTE: [Boot packages]
     "discount",
     "dl-fedora",
     "doctest-extract",
@@ -58,13 +76,16 @@
     "emd",
     "equal-files",
     "essence-of-live-coding-pulse",
+    "exceptions", // see NOTE: [Boot packages]
     "experimenter",
     "fbrnch",
     "fedora-haskell-tools",
     "fedora-repoquery",
     "fft",
     "fftw-ffi",
+    "file-io", // see NOTE: [Boot packages]
     "file-modules",
+    "filepath", // see NOTE: [Boot packages]
     "fix-whitespace",
     "flac",
     "flac-picture",
@@ -75,12 +96,20 @@
     "fsnotify-conduit",
     "gauge",
     "gd",
-    "ghc",
-    "ghc-bignum",
+    "ghc", // see NOTE: [Boot packages]
+    "ghc-bignum", // see NOTE: [Boot packages]
+    "ghc-boot", // see NOTE: [Boot packages]
+    "ghc-boot-th", // see NOTE: [Boot packages]
+    "ghc-compact", // see NOTE: [Boot packages]
     "ghc-core",
-    "ghc-internal",
+    "ghc-experimental", // see NOTE: [Boot packages]
+    "ghc-heap", // see NOTE: [Boot packages]
+    "ghc-internal", // see NOTE: [Boot packages]
+    "ghc-platform", // see NOTE: [Boot packages]
     "ghc-prim",
     "ghc-syntax-highlighter",
+    "ghc-toolchain", // see NOTE: [Boot packages]
+    "ghci", // see NOTE: [Boot packages]
     "ghostscript-parallel",
     "gi-atk",
     "gi-cairo",
@@ -135,9 +164,12 @@
     "gtk3",
     "H",
     "hackage-cli",
+    "haddock-api", // see NOTE: [Boot packages]
+    "haddock-library", // see NOTE: [Boot packages]
     "hamtsolo",
     "happstack-server-tls",
     "happy",
+    "haskeline", // see NOTE: [Boot packages]
     "haskell-gi",
     "haskell-gi-base",
     "haskell-gi-overloading",
@@ -167,6 +199,7 @@
     "hmatrix-special",
     "hmm-lapack",
     "hmpfr",
+    "hpc", // see NOTE: [Boot packages]
     "hopenssl",
     "hp2pretty",
     "hpqtypes",
@@ -195,7 +228,7 @@
     "ihs",
     "Imlib",
     "inline-r",
-    "integer-gmp",
+    "integer-gmp", // see NOTE: [Boot packages]
     "integer-simple",
     "ip6addr",
     "ipython-kernel",
@@ -238,6 +271,7 @@
     "mpi-hs-binary",
     "mpi-hs-cereal",
     "mstate",
+    "mtl", // see NOTE: [Boot packages]
     "mysql",
     "mysql-json-table",
     "mysql-simple",
@@ -253,8 +287,10 @@
     "opaleye",
     "openssl-streams",
     "OrderedBits",
+    "os-string", // see NOTE: [Boot packages]
     "pagure-cli",
     "pandoc-cli",
+    "parsec", // see NOTE: [Boot packages]
     "parser-combinators-tests",
     "pcre-heavy",
     "pcre-light",
@@ -272,7 +308,9 @@
     "postgresql-schema",
     "postgresql-simple",
     "postgresql-simple-url",
+    "pretty", // see NOTE: [Boot packages]
     "primecount",
+    "process", // see NOTE: [Boot packages]
     "profiterole",
     "proto-lens-protobuf-types",
     "psql-helpers",
@@ -292,6 +330,7 @@
     "rocksdb-haskell",
     "rocksdb-haskell-jprupp",
     "rocksdb-query",
+    "rts", // see NOTE: [Boot packages]
     "scrypt",
     "sdl2",
     "sdl2-gfx",
@@ -299,6 +338,7 @@
     "sdl2-mixer",
     "sdl2-ttf",
     "secp256k1-haskell",
+    "semaphore-compat", // see NOTE: [Boot packages]
     "seqalign",
     "servant-http-streams",
     "servius",
@@ -315,6 +355,7 @@
     "stack-all",
     "stack-clean-old",
     "stack-templatizer",
+    "stm", // see NOTE: [Boot packages]
     "stringprep",
     "SVGFonts",
     "swizzle",
@@ -324,27 +365,33 @@
     "sydtest-persistent-postgresql",
     "synthesizer-alsa",
     "tasty-papi",
-    "template-haskell",
+    "template-haskell", // see NOTE: [Boot packages]
     "termonad",
+    "terminfo", // see NOTE: [Boot packages]
     "test-certs",
+    "text", // see NOTE: [Boot packages]
     "text-icu",
     "text-regex-replace",
+    "time", // see NOTE: [Boot packages]
     "tls-debug",
     "tmp-postgres",
     "tmp-proc-postgres",
+    "transformers", // see NOTE: [Boot packages]
     "ua-parser",
     "uniq-deep",
+    "unix", // see NOTE: [Boot packages]
     "users-postgresql-simple",
     "validate-input",
     "vector-fftw",
     "wai-session-postgresql",
     "wild-bind-x11",
-    "Win32",
+    "Win32", // see NOTE: [Boot packages]
     "Win32-notify",
     "windns",
     "X11",
     "X11-xft",
     "x11-xim",
+    "xhtml", // see NOTE: [Boot packages]
     "xmonad",
     "xmonad-contrib",
     "xmonad-extras",

@@ -5,6 +5,7 @@
 aeson ==2.2.3.0
 cborg ==0.2.10.0
 clock ==0.8.4
+extra ==1.8
 kan-extensions ==5.2.6
 mtl installed
 optics-core ==0.4.1.1
