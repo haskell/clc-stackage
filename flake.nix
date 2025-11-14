@@ -113,6 +113,12 @@
           '';
         };
 
+        # Used by ci to run clc-stackage with everything and --dry-run.
+        ci = pkgs.mkShell {
+          buildInputs = deps ++ [ compiler.ghc ];
+          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath ldDeps}:$LD_LIBRARY_PATH";
+        };
+
         dev = pkgs.mkShell {
           buildInputs = [
             compiler.ghc

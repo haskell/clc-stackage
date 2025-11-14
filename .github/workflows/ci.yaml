@@ -54,17 +54,22 @@ jobs:
       - name: Print functional failures
         if: ${{ failure() && steps.functional.conclusion == 'failure' }}
         shell: bash
-        run: |
+        run: .github/scripts/print_logs.sh
+  nix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - "ubuntu-latest"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
 
-          if [[ ! -d output/logs ]]; then
-            echo "*** No output ***"
-          else
-            cd output/logs
+      - name: Setup nix
+        uses: cachix/install-nix-action@v30
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          nix_path: nixpkgs=channel:nixos-unstable
 
-            for dir in */; do
-              echo "*** $d stdout ***"
-              cat "$dir/stdout.log"
-              echo "*** $d stderr ***"
-              cat "$dir/stderr.log"
-            done
-          fi
+      - name: Dry run
+        run: nix develop .#ci -Lv -c bash -c '.github/scripts/dry_run.sh'
