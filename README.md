@@ -20,7 +20,7 @@ The procedure is as follows:
 
 3. `git clone https://github.com/haskell/clc-stackage`, then `cd clc-stackage`.
 
-4. Build the exe: `cabal install clc-stackage --installdir=./bin`.
+4. Build the exe: `cabal install exe:clc-stackage`.
 
     > :warning: **Warning:** Use a normal downloaded GHC for this step, **not** your custom built one. Why? Using the custom GHC can force a build of many dependencies you'd otherwise get for free e.g. `vector`.
 
@@ -30,7 +30,7 @@ The procedure is as follows:
     with-compiler: /home/ghc/_build/stage1/bin/ghc
     ```
 
-6. Run `./bin/clc-stackage` and wait for a long time. See [below](#the-clc-stackage-exe) for more details.
+6. Run `clc-stackage` and wait for a long time. See [below](#the-clc-stackage-exe) for more details.
 
     * On a recent Macbook Air it takes around 12 hours, YMMV.
     * You can interrupt `cabal` at any time and rerun again later.
@@ -72,7 +72,7 @@ The procedure is as follows:
 By default, `clc-stackage` queries https://www.stackage.org/ for snapshot information. In situations where this is not desirable (e.g. the server is not working, or we want to test a custom snapshot), the snapshot can be overridden:
 
 ```sh
-$ ./bin/clc-stackage --snapshot-path=path/to/snapshot
+$ clc-stackage --snapshot-path=path/to/snapshot
 ```
 
 This snapshot should be formatted similar to the `cabal.config` endpoint on the stackage server (e.g. https://www.stackage.org/nightly/cabal.config). That is, package lines should be formatted `<pkgs> ==<vers>`:
@@ -97,12 +97,12 @@ By default (`--write-logs save-failures`), the build logs are saved to the `./ou
 The `clc-stackage` exe allows for splitting the entire package set into subset groups of size `N` with the `--batch N` option. Each group is then built sequentially. Not only can this be useful for situations where building the entire package set in one go is infeasible, but it also provides a "cache" functionality, that allows us to interrupt the program at any point (e.g. `CTRL-C`), and pick up where we left off. For example:
 
 ```sh
-$ ./bin/clc-stackage --batch 100
+$ clc-stackage --batch 100
 ```
 
 This will split the entire downloaded package set into groups of size 100. Each time a group finishes (success or failure), stdout/err will be updated, and then the next group will start. If the group failed to build and we have `--write-logs save-failures` (the default), then the logs and error output will be in `./output/logs/<pkg>/`, where `<pkg>` is the name of the first package in the group.
 
-See `./bin/clc-stackage --help` for more info.
+See `clc-stackage --help` for more info.
 
 ##### Optimal performance
 
