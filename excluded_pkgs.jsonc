@@ -16,7 +16,7 @@
     // NOTE: [Boot packages]
     //
     // Boot packages are excluded from directly building here -- and having
-    // their constraints written, see excluded_constraints.jsonc -- because
+    // their constraints written -- because
     // their versions are not stable within the same major ghc version,
     // and a version mismatch will cause a build failure whenever ghc
     // is in the build plan (which is true for stackage).
