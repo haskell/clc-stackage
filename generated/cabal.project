@@ -1,4 +1,4 @@
-index-state: 2025-05-22T04:18:43Z
+index-state: 2026-03-19T21:41:35Z
 
 -- should be an absolute path to your custom compiler
 --with-compiler: /home/ghc/_build/stage1/bin/ghc
@@ -9,6 +9,7 @@ optimization: False
 
 allow-newer:
   hoogle:crypton-connection,
+  web-rep:transformers,
 
 constraints: hlint +ghc-lib
 constraints: ghc-lib-parser-ex -auto

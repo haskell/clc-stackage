@@ -31,7 +31,7 @@
       pkgs = import nixpkgs {
         inherit system;
       };
-      compiler = pkgs.haskell.packages.ghc9101;
+      compiler = pkgs.haskell.packages.ghc9122;
 
       # There are some packages that do not build well with nix:
       #
@@ -73,6 +73,7 @@
         libsepol # simple-pango
         libsodium # libsodium-bindings
         libthai # simple-pango
+        libwebp # webp
         libxml2 # c14n
         nettle # nettle
         nlopt # srtree
@@ -81,10 +82,13 @@
         pcre2 # simple-cairo
         pkg-config
         postgresql_16 # postgresql-libpq
+        libsysprof-capture # glib-stopgap
+        sqlite # simplest-sqlite
         systemdMinimal # hidapi requires udev
         util-linux # simple-pango requires mount
         xorg.libXdmcp # simple-cairo
         xz # lzma
+        z3 # LiquidHaskell
       ] ++ ldDeps;
     in
     {

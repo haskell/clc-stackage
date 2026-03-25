@@ -56,4 +56,4 @@ getStackage hLogger = do
 --
 -- until one returns json.
 stackageSnapshot :: String
-stackageSnapshot = "nightly-2025-05-23"
+stackageSnapshot = "nightly-2026-03-19"
