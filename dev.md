@@ -98,6 +98,10 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
 
 7. Optional: Update nix inputs (`nix flake update`).
 
+### Verifying snapshot
+
+To verify the snapshot, every package should actually be built i.e. run `clc-stackage` as you normally would. However, this can be quite time-consuming when there are new solver errors that need to be resolved (e.g. new system deps need to be added). An easier method is to first get everything passing with `dry-run` -- e.g. `clc-stackage --cabal-options="--dry-run"` -- then once that is passing, run `clc-stackage` for real.
+
 ## Testing
 
 There are two test suites, `unit` and `functional`. The latter actually runs all of the logic, though it uses the generalized runner:

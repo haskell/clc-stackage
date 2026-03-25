@@ -64,6 +64,7 @@
     "cuda",
     "cutter",
     "dbcleaner",
+    "dbus-menu", // gtk-3
     "deepseq", // see NOTE: [Boot packages]
     "diagrams-svg",
     "directory", // see NOTE: [Boot packages]
@@ -135,6 +136,7 @@
     "gi-gtk3",
     "gi-gtk4",
     "gi-gtk-hs",
+    "gi-gtk-layer-shell",
     "gi-gtksource",
     "gi-gtksource5",
     "gi-harfbuzz",
@@ -175,6 +177,7 @@
     "haskell-gi-overloading",
     "haskoin-core",
     "haskoin-node",
+    "haskoin-store",
     "haskoin-store-data",
     "hasql",
     "hasql-dynamic-statements",
@@ -189,6 +192,7 @@
     "hasql-th",
     "hasql-transaction",
     "haxr",
+    "headroom", // segfault
     "hinotify",
     "hkgr",
     "hledger-interest",
@@ -261,12 +265,15 @@
     "magico",
     "mbox-utility",
     "mega-sdist",
+    "microformats2-parser", // segfault
     "midi-alsa",
     "midi-music-box",
     "misfortune",
     "mmark-cli",
     "moffy-samples-gtk3",
     "moffy-samples-gtk3-run",
+    "moffy-samples-gtk4",
+    "moffy-samples-gtk4-run",
     "mpi-hs",
     "mpi-hs-binary",
     "mpi-hs-cereal",
@@ -364,6 +371,7 @@
     "swizzle-set",
     "sydtest-persistent-postgresql",
     "synthesizer-alsa",
+    "taffybar",
     "tasty-papi",
     "template-haskell", // see NOTE: [Boot packages]
     "termonad",
@@ -383,7 +391,9 @@
     "users-postgresql-simple",
     "validate-input",
     "vector-fftw",
+    "visualize-type-inference",
     "wai-session-postgresql",
+    "web3-tools",
     "wild-bind-x11",
     "Win32", // see NOTE: [Boot packages]
     "Win32-notify",
