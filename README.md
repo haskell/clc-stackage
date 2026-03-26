@@ -14,7 +14,7 @@ An impact assessment is due when
 
 The procedure is as follows:
 
-1. Rebase changes, mandated by your proposal, atop of `ghc-9.10` branch.
+1. Rebase changes, mandated by your proposal, atop the ghc branch (or tag) that corresponds to the current [stackage nightly](https://www.stackage.org/nightly). For example, if the latest snapshot ghc is `ghc-9.12.3`, we would want to rebase our changes on the `ghc-9.12.3-release` tag.
 
 2. Compile a patched GHC, say, `~/ghc/_build/stage1/bin/ghc`.
 
@@ -36,6 +36,7 @@ The procedure is as follows:
     * You can interrupt `cabal` at any time and rerun again later.
     * Consider setting `--jobs` to retain free CPU cores for other tasks.
     * Full build requires roughly 7 Gb of free disk space.
+    * If the build fails with an error about max amount of arguments in `gcc`, run again, but with smaller batch size. 250 worked well for me.
 
     To get an idea of the current progress, we can run the following commands
     on the log file:
@@ -58,6 +59,61 @@ The procedure is as follows:
     * return to Step 6.
 
 8. When everything finally builds, get back to CLC with a list of packages affected and patches required.
+
+### Troubleshooting
+
+Because we build with `nightly` and are at the mercy of cabal's constraint solver, it is possible to run into solver / build issues that have nothing to do with our custom GHC. Some of the most common problems include:
+
+- Nightly adds a new, problematic package `p` e.g.
+
+  - `p` requires a new system dependency (e.g. a C library).
+  - `p` is an executable.
+  - `p` depends on a package in [./excluded_pkgs.jsonc](excluded_pkgs.jsonc).
+
+- A cabal flag is set in a way that breaks the build. For example, our snapshot requires that the `bson` library does *not* have its `_old-network` flag set, as this will cause a build error with our version of `network`. This flag is automatic, so we have to force it in `generated/cabal.project` with `constraints: bson -_old-network`.
+
+- Nightly has many packages drop out for some reason, increasing the chance for solver non-determinism.
+
+We attempt to mitigate such issues by:
+
+- Writing most of the snapshot's exact package versions as cabal constraints to the generated `./generated/cabal.project.local`, which ensures we (transitively) build the same package version every time. Note that boot packages like `text` are deliberately excluded so that we can build a snapshot with multiple GHCs. Otherwise even a GHC minor version difference would fail because `ghc` is in the build plan.
+
+- Ignoring bounds in `generated/cabal.project`:
+
+    ```
+    allow-newer: *:*
+    allow-older: *:*
+    ```
+
+Nevertheless, it is still possible for issues to slip through. When a package `p` fails to build for some reason, we should first:
+
+- Verify that `p` is not in `excluded_pkgs.jsonc`. If it is, nightly probably pulled in some new reverse-dependency `q` that should be added to `excluded_pkgs.jsonc`.
+
+- Verify that `p` does not have cabal flags that can affect dependencies / API.
+
+- Verify that `p`'s version matches what it is in the current snapshot (e.g. `https://www.stackage.org/nightly`). If it does not, either a package needs to be excluded or constraints need to be added.
+
+In general, user mitigations for solver / build problems include:
+
+- Adding `p` to `excluded_pkgs.jsonc`. Note that `p` will still be built if it is a (transitive) dependency of some other package in the snapshot, but will not have its exact bounds written to `cabal.project.local`.
+
+- Manually downloading a snapshot (e.g. `https://www.stackage.org/nightly/cabal.config`), changing / removing the offending package(s), and supplying the file with the `--snapshot-path` param. Like `excluded_pkgs.jsonc`, take care that the problematic package is not a (transitive) dependency of something in the snapshot.
+
+- Adding constraints to `generated/cabal.project` e.g. flags or version constraints like `constraints: filepath > 1.5`.
+
+#### Misc
+
+- Note that while a GHC minor version difference is usually okay, a GHC *major* difference will very likely lead to errors.
+
+- The `flake.nix` line:
+
+    ```nix
+    compiler = pkgs.haskell.packages.ghc<vers>;
+    ```
+
+    can be a useful guide as to which GHC was last tested, as CI uses this ghc to build everything with `--dry-run`, which should report solver errors (e.g. bounds) at the very least.
+
+- If you encounter an error that you think indicates a problem with the configuration here (e.g. new package needs to be excluded, new constraint added), please open an issue. While that is being resolved, the mitigations from the [previous section](#troubleshooting) may be useful.
 
 ### The clc-stackage exe
 
@@ -94,13 +150,21 @@ By default (`--write-logs save-failures`), the build logs are saved to the `./ou
 
 #### Group batching
 
-The `clc-stackage` exe allows for splitting the entire package set into subset groups of size `N` with the `--batch N` option. Each group is then built sequentially. Not only can this be useful for situations where building the entire package set in one go is infeasible, but it also provides a "cache" functionality, that allows us to interrupt the program at any point (e.g. `CTRL-C`), and pick up where we left off. For example:
+By default, the `clc-stackage` exe tries to build all packages at once i.e. every package is written to `generated/generated.cabal`. This can cause problems e.g. we do not have enough memory to build everything simultaneously, or we receive an error that `gcc` has been given too many arguments. Hence we provide the `--batch N` option, which will split the package set into disjoint groups of size `N`. Each group is then built sequentially.
 
-```sh
-$ clc-stackage --batch 100
-```
+The default behavior is:
 
-This will split the entire downloaded package set into groups of size 100. Each time a group finishes (success or failure), stdout/err will be updated, and then the next group will start. If the group failed to build and we have `--write-logs save-failures` (the default), then the logs and error output will be in `./output/logs/<pkg>/`, where `<pkg>` is the name of the first package in the group.
+  1. `clc-stackage` will try to build everything in the same group, even if some package fails (equivalent to cabal's `--keep-going` flag.). If instead `--package-fail-fast` is enabled, the first failure will cause the entire group to immediately fail, and we will move onto the next group.
+
+  2. `clc-stackage` will try every group, even if some prior group fails. The `--group-fail-fast` option changes this so that the first failure will cause `clc-stackage` to exit.
+
+Each time a group finishes (success or failure), stdout/err will be updated, and then the next group will start. If the group failed to build and we have `--write-logs save-failures` (the default), then the logs and error output will be in `./output/logs/<pkg>/`, where `<pkg>` is the name of the first package in the group.
+
+When `clc-stackage` itself finishes (either on its own or via an interrupt like `CTRL-C`), the results are saved to a cache which records all successes, failures, and untested packages. This allows us to pick up where we left off with untested packages (including failures if the `--retry-failures` flag is active).
+
+> [!IMPORTANT]
+>
+> The cache operates at the *batch group* level, so only packages that have been part of a successful group will be considered successes. Conversely, a package will be considered a failure if it is part of a failing group, even if it was built successfully. Therefore, to see what packages actually failed, we will want to check the logs directory. Alternatively, we can first run `clc-stackage` initially with a large `--batch` group (for maximum performance), then run it again with, say, `--batch 1`.
 
 See `clc-stackage --help` for more info.
 

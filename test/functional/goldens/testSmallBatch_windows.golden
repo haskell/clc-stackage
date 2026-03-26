@@ -1,7 +1,12 @@
 [2020-05-31 12:00:00][Info]    Cached results do not exist: output\cache.json
+[2020-05-31 12:00:00][Info]    Snapshot: <snapshot> (<num> packages)
+[2020-05-31 12:00:00][Info]    PATH ghc: <version>
+[2020-05-31 12:00:00][Info]    Stackage ghc: <version>
+[2020-05-31 12:00:00][Info]    Filtered to <num> packages (windows).
+[2020-05-31 12:00:00][Info]    Starting build(s)
 [2020-05-31 12:00:00][Success] 3: cborg-0.2.10.0, clock-0.8.4
-[2020-05-31 12:00:00][Success] 2: extra-1.8, optics-core-0.4.1.1
-[2020-05-31 12:00:00][Success] 1: profunctors-5.6.2
+[2020-05-31 12:00:00][Success] 2: extra-1.8.1, optics-core-0.4.2
+[2020-05-31 12:00:00][Success] 1: profunctors-5.6.3
 
 
 - Successes: 5 (100%)

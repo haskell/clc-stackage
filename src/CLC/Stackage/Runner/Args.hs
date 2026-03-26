@@ -70,6 +70,8 @@ data Args = MkArgs
     -- | If true, the first group that fails to completely build stops
     -- clc-stackage.
     groupFailFast :: Bool,
+    -- | If true, the 'cabal update' step is skipped.
+    noCabalUpdate :: Bool,
     -- | Disables the cache, which otherwise saves the outcome of a run in a
     -- json file. The cache is used for resuming a run that was interrupted.
     noCache :: Bool,
@@ -186,7 +188,7 @@ getArgs = OA.execParser parserInfoArgs
 parseCliArgs :: Parser Args
 parseCliArgs =
   ( do
-      ~(cabalGlobalOpts, cabalOpts, cabalPath) <- parseCabalGroup
+      ~(cabalGlobalOpts, cabalOpts, cabalPath, noCabalUpdate) <- parseCabalGroup
       ~(noCache, retryFailures) <- parseCacheGroup
       ~(groupFailFast, packageFailFast) <- parseFailuresGroup
       ~(batch, printPackageSet, snapshotPath) <- parseMiscGroup
@@ -200,6 +202,7 @@ parseCliArgs =
             cabalPath,
             colorLogs,
             groupFailFast,
+            noCabalUpdate,
             noCache,
             noCleanup,
             packageFailFast,
@@ -213,10 +216,11 @@ parseCliArgs =
   where
     parseCabalGroup =
       OA.parserOptionGroup "Cabal options:" $
-        (,,)
+        (,,,)
           <$> parseCabalGlobalOpts
           <*> parseCabalOpts
           <*> parseCabalPath
+          <*> parseNoCabalUpdate
 
     parseCacheGroup =
       OA.parserOptionGroup "Cache options:" $
@@ -304,7 +308,7 @@ parseCabalPath =
           [ OA.long "cabal-path",
             OA.metavar "PATH",
             OA.completer compgenCwdPathsCompleter,
-            mkHelpNoLine "Optional path to cabal executable."
+            mkHelp "Optional path to cabal executable."
           ]
       )
 
@@ -342,6 +346,17 @@ parseGroupFailFast =
         [ "If true, the first batch group that fails to completely build stops ",
           "clc-stackage."
         ]
+
+parseNoCabalUpdate :: Parser Bool
+parseNoCabalUpdate =
+  OA.switch
+    ( mconcat
+        [ OA.long "no-cabal-update",
+          mkHelpNoLine helpTxt
+        ]
+    )
+  where
+    helpTxt = "If true, skips the 'cabal update' step."
 
 parseNoCache :: Parser Bool
 parseNoCache =
@@ -426,7 +441,7 @@ parseSnapshotPath =
                   "https://www.stackage.org/<snapshot>/cabal.config i.e. each ",
                   "line should be '<pkg> ==<vers>' e.g. 'lens ==5.3.4'. Note ",
                   "that the snapshot is still filtered according to ",
-                  "excluded_pkgs.json."
+                  "excluded_pkgs.jsonc."
                 ]
           ]
       )

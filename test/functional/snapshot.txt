@@ -1,7 +1,9 @@
-# This is the list of packages from the functional tests' modifyPackages
-# (chosen for consistency) with a few others thrown in, to test that filtering
-# works the same for both querying stackage and reading this file. This list
-# is intentionally kept small to make maintenance easier.
+-- This is the list of packages from the functional tests' modifyPackages
+-- (chosen for consistency) with a few others thrown in, to test that filtering
+-- works the same for both querying stackage and reading this file. This list
+-- is intentionally kept small to make maintenance easier.
+-- Stackage snapshot from: http://www.stackage.org/snapshot/nightly-2026-03-25
+-- with-compiler: ghc-9.12.3
 aeson ==2.2.3.0
 cborg ==0.2.10.0
 clock ==0.8.4

@@ -29,7 +29,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: haskell-actions/setup@v2
         with:
-          ghc-version: "9.10.3"
+          # Should be the current stackage nightly, though this will likely go
+          # out-of-date eventually, until a problem is reported.
+          ghc-version: "9.12"
       - name: Configure
         run: |
           cabal configure --enable-tests --ghc-options -Werror

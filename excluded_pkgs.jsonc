@@ -270,6 +270,7 @@
     "midi-music-box",
     "misfortune",
     "mmark-cli",
+    "mmark-ext", // ghc-syntax-highlighter
     "moffy-samples-gtk3",
     "moffy-samples-gtk3-run",
     "moffy-samples-gtk4",
@@ -359,6 +360,7 @@
     "sqlcli",
     "sqlcli-odbc",
     "sqlite-simple",
+    "stakhanov", // hasql
     "stack-all",
     "stack-clean-old",
     "stack-templatizer",

@@ -8,7 +8,7 @@ This project is organized into several libraries and a single executable. Roughl
 2. Prune `s` based on packages we know we do not want (e.g. system deps).
 3. Generate a custom `generated.cabal` file for the given package set, and try to build it.
 
-Futhermore, we allow for building subsets of the entire stackage package set with the `--batch` feature. This will split the package set into disjoint groups, and build each group sequentially. The process can be interrupted at any time (e.g. `CTRL-C`), and progress will be saved in a "cache" (json file), so we can pick up where we left off.
+Furthermore, we allow for building subsets of the entire stackage package set with the `--batch` feature. This will split the package set into disjoint groups, and build each group sequentially. The process can be interrupted at any time (e.g. `CTRL-C`), and progress will be saved in a "cache" (json file), so we can pick up where we left off.
 
 ## Components
 
@@ -16,7 +16,7 @@ The `clc-stackage` library is namespaced by functionality:
 
 ### utils
 
-`CLC.Stackage.Utils` ontains common utilities e.g. logging and hardcoded file paths.
+`CLC.Stackage.Utils` contains common utilities e.g. logging and hardcoded file paths.
 
 ### parser
 
@@ -73,30 +73,25 @@ The reason this logic is a library function and not the executable itself is for
 
 The executable that actually runs. This is a very thin wrapper over `runner`, which merely sets up the logging handler.
 
-## Updating to a new shapshot
+## Updating to a new snapshot
 
-1. Update to the desired snapshot:
+`clc-stackage` is based on `nightly` -- which changes automatically -- meaning we do not necessarily have to do anything when a new (minor) snapshot is released. On the other hand, *major* snapshot updates will almost certainly bring in new packages that need to be excluded, so there are some general "update steps" we will want to take:
 
-    ```haskell
-    -- CLC.Stackage.Parser.API
-    stackageSnapshot :: String
-    stackageSnapshot = "nightly-yyyy-mm-dd"
-    ```
+1. Modify [excluded_pkgs.json](excluded_pkgs.json) as needed. That is, updating the snapshot major version will probably bring in some new packages that we do not want. The update process is essentially trial-and-error i.e. run `clc-stackage` as normal, and later add any failing packages that should be excluded.
 
-2. Update the `index-state` in [cabal.project](cabal.project) and [generated/cabal.project](generated/cabal.project).
+2. Update `ghc-version` in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
 
-3. Modify [excluded_pkgs.json](excluded_pkgs.json) as needed. That is, updating the snapshot will probably bring in some new packages that we do not want. The update process is essentially trial-and-error i.e. run `clc-stackage` as normal, and later add any failing packages that should be excluded.
+3. Update functional tests as needed i.e. exact package versions in `*golden` and `test/functional/snapshot.txt`.
 
-4. Update references to the current ghc e.g.
+4. Optional: Update nix:
 
-    1. `ghc-version` in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
-    2. [README.md](README.md).
+    - Inputs (`nix flake update`).
+    - GHC: Update the `compiler = pkgs.haskell.packages.ghc<vers>;` line.
+    - Add to the `flake.nix`'s `ldDeps` and `deps` as needed to have the `nix` CI job pass. System libs available on nix can be found here: https://search.nixos.org/packages?channel=unstable.
 
-5. Update functional tests as needed i.e. exact package versions in `*golden` and `test/functional/snapshot.txt`.
+    This job builds everything with `--dry-run`, so its success is a useful proxy for `clc-stackage`'s health. In other words, if the nix job fails, there is almost certainly a general issue (i.e. either a package should be excluded or new system dep is required), but if it succeeds, the package set is in pretty good shape (there may still be sporadic issues e.g. a package does not properly declare its system dependencies at config time).
 
-6. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
-
-7. Optional: Update nix inputs (`nix flake update`).
+5. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
 
 ### Verifying snapshot
 

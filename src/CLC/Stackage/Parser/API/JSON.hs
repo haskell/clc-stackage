@@ -64,9 +64,11 @@ getStackage manager stackageSnapshot = do
     stackageUrl = "https://stackage.org/" <> stackageSnapshot
 
 toSnapshotCommon :: StackageResponse -> Common.StackageResponse
-toSnapshotCommon (MkStackageResponse _ pkgs) =
+toSnapshotCommon (MkStackageResponse snapshot pkgs) =
   Common.MkStackageResponse
-    { packages = toPackageCommon <$> pkgs
+    { ghc = Just snapshot.ghc,
+      packages = toPackageCommon <$> pkgs,
+      snapshot = Just snapshot.name
     }
 
 toPackageCommon :: PackageResponse -> Package.Package
