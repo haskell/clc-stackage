@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 -- | Provides the type representing a package with version.
 module CLC.Stackage.Utils.Package
   ( -- * Package

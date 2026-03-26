@@ -2,6 +2,7 @@
 
 module CLC.Stackage.Builder.Process
   ( buildProject,
+    cabalUpdate,
   )
 where
 
@@ -121,6 +122,26 @@ buildProject env idx pkgs = do
     pkgsSet = Set.fromList pkgsList
 
     addPackages = Set.union pkgsSet
+
+-- | Runs "cabal update".
+cabalUpdate :: BuildEnv -> IO ()
+cabalUpdate env = do
+  Logging.putTimeInfoStr env.hLogger "Running 'cabal update'"
+  P.readProcessWithExitCode env.cabalPath ["update"] "" >>= \(ec, out, err) ->
+    case ec of
+      ExitSuccess -> pure ()
+      ExitFailure _ -> do
+        let msg =
+              mconcat
+                [ "Failed running 'cabal update': ",
+                  "Out: '",
+                  T.pack out,
+                  "', Err: '",
+                  T.pack err,
+                  "'"
+                ]
+        Logging.putTimeErrStr env.hLogger msg
+        throwIO ec
 
 createCurrentLogsDir :: IO (OsPath, OsPath, OsPath)
 createCurrentLogsDir = do

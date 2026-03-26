@@ -22,7 +22,7 @@ import CLC.Stackage.Parser.API.Common
         ReasonStatus
       ),
     StackageException (MkStackageException),
-    StackageResponse (MkStackageResponse, packages),
+    StackageResponse (MkStackageResponse, ghc, packages, snapshot),
   )
 import CLC.Stackage.Parser.API.JSON qualified as JSON
 import CLC.Stackage.Utils.Exception qualified as Ex
@@ -36,7 +36,7 @@ getStackage :: Logging.Handle -> IO StackageResponse
 getStackage hLogger = do
   manager <- TLS.newTlsManager
   Ex.tryAny (JSON.getStackage manager stackageSnapshot) >>= \case
-    Right r1 -> pure $ r1
+    Right r1 -> pure r1
     Left jsonEx -> do
       let msg =
             mconcat
@@ -48,12 +48,7 @@ getStackage hLogger = do
 
       CabalConfig.getStackage manager stackageSnapshot
 
--- | Stackage snapshot. Note that picking a "good" snapshot is something of
--- an art i.e. not all valid snapshots return json output at the
--- expected endpoint. I essentially try snapshots with
---
---    curl -H "Accept: application/json" -L https://stackage.org/nightly-yyyy-mm-dd
---
--- until one returns json.
+-- | Stackage snapshot. Currently just 'nightly' to hopefully allow clc-stackage
+-- to be more flexible.
 stackageSnapshot :: String
-stackageSnapshot = "nightly-2026-03-19"
+stackageSnapshot = "nightly"

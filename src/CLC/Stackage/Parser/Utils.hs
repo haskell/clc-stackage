@@ -1,6 +1,11 @@
 module CLC.Stackage.Parser.Utils
   ( CommentsException (..),
     stripComments,
+    stripInfix,
+
+    -- * Misc
+    isNum,
+    spaceW8,
   )
 where
 
@@ -94,5 +99,16 @@ starW8 = i2w8 $ Ch.ord '*'
 fslashW8 :: Word8
 fslashW8 = i2w8 $ Ch.ord '/'
 
+spaceW8 :: Word8
+spaceW8 = i2w8 $ Ch.ord ' '
+
+isNum :: Word8 -> Bool
+isNum w = w >= (i2w8 $ Ch.ord '0') && w <= (i2w8 $ Ch.ord '9')
+
 i2w8 :: Int -> Word8
 i2w8 = fromIntegral
+
+stripInfix :: ByteString -> ByteString -> Maybe (ByteString, ByteString)
+stripInfix bs1 bs2 = (pre,) <$> BS.stripPrefix bs1 rest
+  where
+    (pre, rest) = BS.breakSubstring bs1 bs2

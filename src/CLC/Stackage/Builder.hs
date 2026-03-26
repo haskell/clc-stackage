@@ -5,6 +5,7 @@ module CLC.Stackage.Builder
 
     -- * Misc
     Batch.batchPackages,
+    Process.cabalUpdate,
   )
 where
 

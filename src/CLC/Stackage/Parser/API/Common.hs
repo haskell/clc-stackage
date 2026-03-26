@@ -19,6 +19,7 @@ import Control.Exception
     SomeException,
   )
 import Data.ByteString (ByteString)
+import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import GHC.Generics (Generic)
 import Network.HTTP.Client (Response)
@@ -27,8 +28,10 @@ import Network.HTTP.Types.Status (Status)
 import Network.HTTP.Types.Status qualified as Status
 
 -- | Stackage response. This type unifies different stackage responses.
-newtype StackageResponse = MkStackageResponse
-  { packages :: [Package]
+data StackageResponse = MkStackageResponse
+  { ghc :: Maybe Text,
+    packages :: [Package],
+    snapshot :: Maybe Text
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)

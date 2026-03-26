@@ -2,17 +2,20 @@
 
 module Main (main) where
 
+import CLC.Stackage.Parser.Utils qualified as Parser.Utils
 import CLC.Stackage.Runner qualified as Runner
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
-import CLC.Stackage.Utils.OS (Os (Windows), currentOs)
+import CLC.Stackage.Utils.OS (Os (Linux, Osx, Windows), currentOs)
 import CLC.Stackage.Utils.Package (Package (name))
 import CLC.Stackage.Utils.Paths qualified as Paths
+import Control.Applicative (asum)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C8
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List qualified as L
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text.Encoding qualified as TEnc
@@ -165,11 +168,45 @@ runGolden getNoCleanup params =
         finalArgs = args' ++ noCleanupArgs
 
     logs <- withArgs finalArgs params.runner
+    let logs' = filter (not . skipLog) $ fmap massageLogs logs
 
-    writeActualFile $ toBS logs
+    writeActualFile $ toBS logs'
   where
+    -- Logs whose presence is non-deterministic i.e. need to be removed
+    -- entirely.
+    skipLog = BS.isInfixOf "PATH and Stackage ghc"
+
+    -- Strip non-determinism from logs (e.g. version numbers, snapshots).
+    massageLogs bs =
+      fromMaybe bs $
+        asum $ fmap ($ bs)
+          [ fixGhcStr,
+            fixSnapshotStr,
+            fixNumPkgs
+          ]
+      where
+        fixGhcStr b = do
+          (pre, r1) <- Parser.Utils.stripInfix "ghc: " b
+          let (_vers, rest) = BS.break (== Parser.Utils.spaceW8) r1
+          pure $ pre <> "ghc: <version>" <> rest
+
+        fixSnapshotStr b = do
+          (pre, r1) <- Parser.Utils.stripInfix "Snapshot: " b
+          let (_vers, r2) = BS.break (== Parser.Utils.spaceW8) r1
+              rest = fromMaybe r2 (fixNumPkgs r2)
+          pure $ pre <> "Snapshot: <snapshot>" <> rest
+
+        fixNumPkgs b = do
+          (r1, post) <- Parser.Utils.stripInfix " packages" b
+          let (pre, _num) = BS.breakEnd (not . Parser.Utils.isNum) r1
+          pure $ pre <> "<num> packages" <> post
+
     -- test w/ color off since CI can't handle it, apparently
-    args' = "--color-logs" : "off" : params.args
+    args' =
+      "--color-logs"
+        : "off"
+        : "--no-cabal-update"
+        : params.args
 
     baseTestPath =
       goldensDir
@@ -190,5 +227,6 @@ goldensDir = [osp|test|] </> [osp|functional|] </> [osp|goldens|]
 
 ext :: OsPath
 ext = case currentOs of
+  Linux -> [osp|_linux|]
+  Osx -> [osp|_osx|]
   Windows -> [osp|_windows|]
-  _ -> [osp|_posix|]

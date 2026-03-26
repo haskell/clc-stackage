@@ -73,6 +73,8 @@ data RunnerEnv = MkRunnerEnv
     -- cabal.project.local's constraint section, to ensure we always use the
     -- same transitive dependencies.
     completePackageSet :: [Package],
+    -- | Disables the 'cabal update' step.
+    noCabalUpdate :: Bool,
     -- | Disables the cache, which otherwise saves the outcome of a run in a
     -- json file. The cache is used for resuming a run that was interrupted.
     noCache :: Bool,
@@ -103,7 +105,7 @@ setup hLoggerRaw modifyPackages = do
 
   when cliArgs.printPackageSet $ do
     Logging.putTimeInfoStr hLogger "Printing package set"
-    Parser.printPackageList Nothing
+    Parser.printPackageList hLogger cliArgs.snapshotPath Nothing
     throwIO ExitSuccess
 
   -- Set up build args for cabal, filling in missing defaults
@@ -197,6 +199,7 @@ setup hLoggerRaw modifyPackages = do
       { buildEnv,
         cache,
         completePackageSet,
+        noCabalUpdate = cliArgs.noCabalUpdate,
         noCache = cliArgs.noCache,
         noCleanup = cliArgs.noCleanup,
         retryFailures = cliArgs.retryFailures,

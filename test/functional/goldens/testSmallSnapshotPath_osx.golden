@@ -1,9 +1,9 @@
-[2020-05-31 12:00:00][Info]    Cached results do not exist: output\cache.json
+[2020-05-31 12:00:00][Info]    Cached results do not exist: output/cache.json
 [2020-05-31 12:00:00][Info]    Snapshot: <snapshot> (<num> packages)
 [2020-05-31 12:00:00][Warn]    Only found <num> packages. Is that right?
 [2020-05-31 12:00:00][Info]    PATH ghc: <version>
 [2020-05-31 12:00:00][Info]    Stackage ghc: <version>
-[2020-05-31 12:00:00][Info]    Filtered to <num> packages (windows).
+[2020-05-31 12:00:00][Info]    Filtered to <num> packages (osx).
 [2020-05-31 12:00:00][Info]    Starting build(s)
 [2020-05-31 12:00:00][Success] 1: cborg-0.2.10.0, clock-0.8.4, extra-1.8, op...
 
