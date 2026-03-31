@@ -160,6 +160,7 @@
     "gopher-proxy",
     "group-by-date",
     "gtk",
+    "gtk-scaling-image",
     "gtk-sni-tray",
     "gtk-strut",
     "gtk2hs-buildtools",
