@@ -30,7 +30,15 @@ The procedure is as follows:
     with-compiler: /home/ghc/_build/stage1/bin/ghc
     ```
 
-6. Run `clc-stackage` and wait for a long time. See [below](#the-clc-stackage-exe) for more details.
+6. Add your custom GHC to the PATH e.g.
+
+    ```
+    export PATH=/home/ghc/_build/stage1/bin/:$PATH
+    ```
+
+    Nix users can uncomment (and modify) this line in the `flake.nix`.
+
+7. Run `clc-stackage` and wait for a long time. See [below](#the-clc-stackage-exe) for more details.
 
     * On a recent Macbook Air it takes around 12 hours, YMMV.
     * You can interrupt `cabal` at any time and rerun again later.
@@ -51,14 +59,14 @@ The procedure is as follows:
     $ watch -n 10 "grep -Eo 'Completed|^ -' output/logs/current-build/stdout.log | sort -r | uniq -c | awk '{print \$1}'"
     ```
 
-7. If any packages fail to compile:
+8. If any packages fail to compile:
 
     * copy them locally using `cabal unpack`,
     * patch to confirm with your proposal,
     * link them from `packages` section of `cabal.project`,
     * return to Step 6.
 
-8. When everything finally builds, get back to CLC with a list of packages affected and patches required.
+9. When everything finally builds, get back to CLC with a list of packages affected and patches required.
 
 ### Troubleshooting
 
@@ -189,13 +197,3 @@ For Linux based systems, there's a provided `flake.nix` and `shell.nix` to get a
 with an approximation of the required dependencies (cabal itself, C libs) to build `clc-stackage`.
 
 Note that it is not actively maintained, so it may require some tweaking to get working, and conversely, it may have some redundant dependencies.
-
-## Misc
-
-* Your custom GHC will need to be on the PATH to build the `stack` library e.g.
-
-  ```
-  export PATH=/home/ghc/_build/stage1/bin/:$PATH
-  ```
-
-  Nix users can uncomment (and modify) this line in the `flake.nix`.
