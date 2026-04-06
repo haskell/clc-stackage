@@ -181,6 +181,7 @@ setup hLoggerRaw modifyPackages = do
       buildEnv =
         MkBuildEnv
           { batch = cliArgs.batch,
+            batchIndex = cliArgs.batchIndex,
             buildArgs,
             cabalPath,
             groupFailFast = cliArgs.groupFailFast,
@@ -217,8 +218,10 @@ teardown :: RunnerEnv -> IO ()
 teardown env = do
   endTime <- env.buildEnv.hLogger.getLocalTime
   when env.cleanup $ do
-    Dir.removeFile Paths.generatedCabalPath
-    Dir.removeFile Paths.generatedCabalProjectLocalPath
+    -- removePathForcibly as these might not exist e.g. if the we did not
+    -- build anything.
+    Dir.removePathForcibly Paths.generatedCabalPath
+    Dir.removePathForcibly Paths.generatedCabalProjectLocalPath
 
   results <- getResults env.buildEnv
   let report =

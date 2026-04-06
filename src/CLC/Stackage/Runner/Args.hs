@@ -58,6 +58,10 @@ data Args = MkArgs
   { -- | If given, batches packages together so we build more than one.
     -- Defaults to batching everything together in the same group.
     batch :: Maybe Int,
+    -- | 1-based index for building the Nth package group only, according to
+    -- --batch. Intended for CI use, where building all groups takes too much
+    -- time.
+    batchIndex :: Maybe Int,
     -- | Global options to pass to cabal e.g. --store-dir.
     cabalGlobalOpts :: [String],
     -- | Options to pass to cabal e.g. --semaphore.
@@ -191,12 +195,13 @@ parseCliArgs =
       ~(cabalGlobalOpts, cabalOpts, cabalPath, cabalUpdate) <- parseCabalGroup
       ~(cache, retryFailures) <- parseCacheGroup
       ~(groupFailFast, packageFailFast) <- parseFailuresGroup
-      ~(batch, printPackageSet, snapshotPath) <- parseMiscGroup
+      ~(batch, batchIndex, printPackageSet, snapshotPath) <- parseMiscGroup
       ~(cleanup, colorLogs, writeLogs) <- parseOutputGroup
 
       pure $
         MkArgs
           { batch,
+            batchIndex,
             cabalGlobalOpts,
             cabalOpts,
             cabalPath,
@@ -236,8 +241,9 @@ parseCliArgs =
 
     parseMiscGroup =
       OA.parserOptionGroup "Misc options:" $
-        (,,)
+        (,,,)
           <$> parseBatch
+          <*> parseBatchIndex
           <*> parsePrintPackageSet
           <*> parseSnapshotPath
 
@@ -264,6 +270,22 @@ parseBatch =
                   "the better status reporting. No option means we batch ",
                   "everything in the same group."
                 ]
+          ]
+      )
+
+-- Determines which --batch group to build. Normally we want to build all
+-- groups, so this arg is intended only for CI, where a single CI job cannot
+-- build everything, or it will time out. Hence this is marked 'internal'
+-- to hide it from the --help page, as its presence would only confuse.
+parseBatchIndex :: Parser (Maybe Int)
+parseBatchIndex =
+  OA.optional $
+    OA.option
+      OA.auto
+      ( mconcat
+          [ OA.long "batch-index",
+            OA.internal,
+            OA.metavar "NAT"
           ]
       )
 

@@ -26,7 +26,7 @@ jobs:
           - "windows-latest"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: haskell-actions/setup@v2
         with:
           # Should be the current stackage nightly, though this will likely go
@@ -57,7 +57,7 @@ jobs:
         if: ${{ failure() && steps.functional.conclusion == 'failure' }}
         shell: bash
         run: .github/scripts/print_logs.sh
-  nix:
+  dry-run:
     strategy:
       fail-fast: false
       matrix:
@@ -65,13 +65,86 @@ jobs:
         - "ubuntu-latest"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup nix
-        uses: cachix/install-nix-action@v30
+        uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Dry run
         run: nix develop .#ci -Lv -c bash -c '.github/scripts/dry_run.sh'
+
+      # Upload installed binary so that build-batch does not need to re-install
+      # it.
+      - name: Upload clc-stackage binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: clc-stackage-binary
+          path: ./bin/clc-stackage
+          retention-days: 1
+
+  # Uses jq's 'range(m; n)' operator to create list of indexes from [m, n)
+  # for the build-batch job. Slightly nicer than manually listing all of them.
+  build-batch-indexes:
+    runs-on: "ubuntu-latest"
+    outputs:
+      indexes: ${{ steps.set-batch-indexes.outputs.indexes }}
+    steps:
+      - id: set-batch-indexes
+        run: echo "indexes=$(jq -cn '[range(1; 19)]')" >> $GITHUB_OUTPUT
+
+  # Ideally CI would run a job that actually builds all packages, but this
+  # can take a very long time, potentially longer than github's free CI limits
+  # (last time checked: 5.5 hrs).
+  #
+  # What we can do instead, is perform the usual batch process of dividing the
+  # package set into groups, then have a different job build each group.
+  # This does /not/ run up against github's free CI limits.
+  #
+  # To do this, we have the script batch_index.sh divide the package set into
+  # groups, per --batch. Then, using github's matrix strategy, have each
+  # job build only a specific group by passing its index as --batch-index.
+  #
+  # In other words, each job runs
+  #
+  #     clc-stackage --batch N --batch-index k
+  #
+  # where k is matrix.index, hence each building a different group.
+  # The only other consideration we have, then, is to make sure we have enough
+  # indices to cover the whole package set.
+  #
+  # Currently, we choose --batch to be 200, and the total package set is
+  # around 3400, which is filtered to about 3100 packages to build. We thus
+  # need at least ceiling(3100 / 200) = 16 indexes to cover this.
+  #
+  # There is no harm in going overboard e.g. if we have an index that is out of
+  # range, that job will simply end with a warning message. We should
+  # therefore err on the side of adding too many indices, rather than too few.
+  build-batch:
+    needs: [build-batch-indexes, dry-run]
+    strategy:
+      fail-fast: false
+      matrix:
+        index: ${{ fromJSON(needs.build-batch-indexes.outputs.indexes) }}
+    name: Batch group ${{ matrix.index }}
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      # Download clc-stackage binary from dry-run job.
+      - name: Download binary
+        uses: actions/download-artifact@v7
+        with:
+          name: clc-stackage-binary
+          path: ./bin
+
+      - name: Build
+        run: nix develop .#ci -Lv -c bash -c '.github/scripts/batch_index.sh ${{ matrix.index }}'

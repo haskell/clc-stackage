@@ -8,7 +8,7 @@ where
 
 import CLC.Stackage.Builder qualified as Builder
 import CLC.Stackage.Builder.Env
-  ( BuildEnv (hLogger, progress),
+  ( BuildEnv (batchIndex, hLogger, progress),
     Progress (failuresRef),
   )
 import CLC.Stackage.Builder.Writer qualified as Writer
@@ -20,6 +20,10 @@ import Control.Exception (bracket, throwIO)
 import Control.Monad (when)
 import Data.Foldable (for_)
 import Data.IORef (readIORef)
+import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty qualified as NE
+import Data.Text (Text)
+import Data.Text qualified as T
 import System.Exit (ExitCode (ExitFailure))
 import System.IO qualified as IO
 
@@ -52,7 +56,24 @@ runModifyPackages hLogger modifyPackages = withHiddenInput $ do
 
     Logging.putTimeInfoStr buildEnv.hLogger "Starting build(s)"
 
-    for_ pkgGroupsIdx $ \(pkgGroup, idx) -> Builder.buildProject buildEnv idx pkgGroup
+    case buildEnv.batchIndex of
+      -- No batch index: normal, build all groups sequentially.
+      Nothing -> for_ pkgGroupsIdx $ \(pkgGroup, idx) ->
+        Builder.buildProject buildEnv idx pkgGroup
+      Just batchIndex ->
+        -- Some batch index: if it is in range, build that group.
+        case index batchIndex pkgGroupsIdx of
+          Just (pkgGroup, idx) -> Builder.buildProject buildEnv idx pkgGroup
+          Nothing -> do
+            let msg =
+                  mconcat
+                    [ "Nothing to build. Index '",
+                      showt batchIndex,
+                      "' is out of range for ",
+                      showt $ NE.length pkgGroupsIdx,
+                      " group(s)."
+                    ]
+            Logging.putTimeWarnStr buildEnv.hLogger msg
 
     numErrors <- length <$> readIORef buildEnv.progress.failuresRef
     when (numErrors > 0) $ throwIO $ ExitFailure 1
@@ -75,3 +96,16 @@ withHiddenInput m = bracket hideInput unhideInput (const m)
     unhideInput (buffMode, echoMode) = do
       IO.hSetBuffering IO.stdin buffMode
       IO.hSetEcho IO.stdin echoMode
+
+index :: Int -> NonEmpty a -> Maybe a
+index idx = go idx' . NE.toList
+  where
+    go _ [] = Nothing
+    go 0 (x : _) = Just x
+    go !n (_ : xs) = go (n - 1) xs
+
+    -- Subtract one since the index is one-based, not zero.
+    idx' = idx - 1
+
+showt :: (Show a) => a -> Text
+showt = T.pack . show

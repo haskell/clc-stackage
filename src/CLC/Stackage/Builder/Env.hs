@@ -34,6 +34,10 @@ data BuildEnv = MkBuildEnv
   { -- | If we have @Just n@, 'packagesToBuild' will be split into groups of at most
     -- size @n@. If @Nothing@, the entire set will be built in one go.
     batch :: Maybe Int,
+    -- | 1-based index for building the Nth package group only, according to
+    -- --batch. Intended for CI use, where building all groups takes too much
+    -- time.
+    batchIndex :: Maybe Int,
     -- | Build arguments for cabal.
     buildArgs :: [String],
     -- | Optional path to cabal executable.
