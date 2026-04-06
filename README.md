@@ -119,7 +119,7 @@ In general, user mitigations for solver / build problems include:
     compiler = pkgs.haskell.packages.ghc<vers>;
     ```
 
-    can be a useful guide as to which GHC was last tested, as CI uses this ghc to build everything with `--dry-run`, which should report solver errors (e.g. bounds) at the very least.
+    can be a useful guide as to which GHC was last tested, as CI uses this ghc to build everything.
 
 - If you encounter an error that you think indicates a problem with the configuration here (e.g. new package needs to be excluded, new constraint added), please open an issue. While that is being resolved, the mitigations from the [previous section](#troubleshooting) may be useful.
 
