@@ -5,11 +5,12 @@ module CLC.Stackage.Builder.Writer
 where
 
 import CLC.Stackage.Builder.Batch (PackageGroup (unPackageGroup))
+import CLC.Stackage.Parser (PackageSet (extraPins, packageList, unpinned))
 import CLC.Stackage.Utils.IO qualified as IO
-import CLC.Stackage.Utils.Package (Package)
 import CLC.Stackage.Utils.Package qualified as Package
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Data.List.NonEmpty qualified as NE
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
@@ -27,13 +28,32 @@ import Data.Text.Encoding qualified as TEnc
 -- By writing the entire (exact) dependency set into the cabal.project.local's
 -- constraints section, we ensure the same version of aeson is used every time
 -- it is a (transitive) dependency.
-writeCabalProjectLocal :: [Package] -> IO ()
-writeCabalProjectLocal pkgs = IO.writeBinaryFile path constraintsSrc
+writeCabalProjectLocal :: PackageSet -> IO ()
+writeCabalProjectLocal packageSet = IO.writeBinaryFile path constraintsSrc
   where
     path = Paths.generatedCabalProjectLocalPath
     constraintsSrc = TEnc.encodeUtf8 constraintsTxt
     constraintsTxt = T.unlines $ "constraints:" : constraints
-    constraints = (\p -> "  " <> Package.toCabalConstraintsText p) <$> pkgs
+    -- Use any prefix so that this applies to setup too e.g. happy
+    constraints = (\p -> "  any." <> Package.toCabalConstraintsText p) <$> constrainedPkgs
+
+    -- In addition to all of the normal packages whose constraints we want to
+    -- write, we also need to:
+    --
+    --   - Add in extraPins.
+    --   - Remove any unpinned.
+    constrainedPkgs =
+      Set.toList
+        . removeUnpinned
+        . addExtraPins
+        . Set.fromList
+        $ packageSet.packageList
+
+    addExtraPins = Set.union (Set.fromList packageSet.extraPins)
+
+    removeUnpinned =
+      Set.filter
+        (\p -> Set.notMember p.name (Set.fromList packageSet.unpinned))
 
 -- | Writes the package set to a cabal file for building. This will be called
 -- for each group we want to build.
