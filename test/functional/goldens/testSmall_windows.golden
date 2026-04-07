@@ -4,7 +4,7 @@
 [2020-05-31 12:00:00][Info]    Stackage ghc: <version>
 [2020-05-31 12:00:00][Info]    Filtered to <num> packages (windows).
 [2020-05-31 12:00:00][Info]    Starting build(s)
-[2020-05-31 12:00:00][Success] 1: cborg-0.2.10.0, clock-0.8.4, extra-1.8.1, ...
+[2020-05-31 12:00:00][Success] 1: cborg-<vers>, clock-<vers>, extra-<vers>, ...
 
 
 - Successes: 5 (100%)

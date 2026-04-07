@@ -5,6 +5,7 @@ module CLC.Stackage.Parser.Utils
 
     -- * Misc
     isNum,
+    commaW8,
     spaceW8,
   )
 where
@@ -102,8 +103,11 @@ fslashW8 = i2w8 $ Ch.ord '/'
 spaceW8 :: Word8
 spaceW8 = i2w8 $ Ch.ord ' '
 
+commaW8 :: Word8
+commaW8 = i2w8 $ Ch.ord ','
+
 isNum :: Word8 -> Bool
-isNum w = w >= (i2w8 $ Ch.ord '0') && w <= (i2w8 $ Ch.ord '9')
+isNum w = w >= i2w8 (Ch.ord '0') && w <= i2w8 (Ch.ord '9')
 
 i2w8 :: Int -> Word8
 i2w8 = fromIntegral

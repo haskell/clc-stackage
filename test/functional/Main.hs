@@ -177,13 +177,18 @@ runGolden getNoCleanup params =
     skipLog = BS.isInfixOf "PATH and Stackage ghc"
 
     -- Strip non-determinism from logs (e.g. version numbers, snapshots).
+    -- At most one of these should match. If none do, we return the original
+    -- string.
     massageLogs bs =
       fromMaybe bs $
-        asum $ fmap ($ bs)
-          [ fixGhcStr,
-            fixSnapshotStr,
-            fixNumPkgs
-          ]
+        asum $
+          fmap
+            ($ bs)
+            [ fixGhcStr,
+              fixSnapshotStr,
+              fixNumPkgs,
+              fixLibs
+            ]
       where
         fixGhcStr b = do
           (pre, r1) <- Parser.Utils.stripInfix "ghc: " b
@@ -200,6 +205,41 @@ runGolden getNoCleanup params =
           (r1, post) <- Parser.Utils.stripInfix " packages" b
           let (pre, _num) = BS.breakEnd (not . Parser.Utils.isNum) r1
           pure $ pre <> "<num> packages" <> post
+
+        -- Idea: For a given bytestring, try to find an expected lib string
+        -- e.g. 'aeson'. If we find it, we place the version number with
+        -- '<vers>', then recursively run on the rest of the string.
+        fixLibs :: ByteString -> Maybe ByteString
+        fixLibs b = do
+          (p1, r1) <- fixLib b
+          pure $ p1 <> fromMaybe r1 (fixLibs r1)
+          where
+            fixLib :: ByteString -> Maybe (ByteString, ByteString)
+            fixLib c = asum $ fmap (tryLib c) libs
+
+            libs =
+              [ "aeson",
+                "cborg",
+                "clock",
+                "extra",
+                "kan-extensions",
+                "mtl",
+                "optics-core",
+                "profunctors",
+                "servant"
+              ]
+
+            -- E.g. tryLib "abc lib-1.2.3 def" "lib"
+            -- Just ("abc lib-<vers>"," def")
+            tryLib :: ByteString -> ByteString -> Maybe (ByteString, ByteString)
+            tryLib c lib = do
+              (pre, r1) <- Parser.Utils.stripInfix lib c
+              let (_vers, rest) = BS.break isDelim r1
+              pure (pre <> lib <> "-<vers>", rest)
+              where
+                isDelim d =
+                  d == Parser.Utils.commaW8
+                    || d == Parser.Utils.spaceW8
 
     -- test w/ color off since CI can't handle it, apparently
     args' =
