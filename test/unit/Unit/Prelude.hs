@@ -20,6 +20,14 @@ import CLC.Stackage.Builder.Env
       ),
     Progress (MkProgress, failuresRef, successesRef),
   )
+import CLC.Stackage.Parser
+  ( PackageSet
+      ( MkPackageSet,
+        extraPins,
+        packageList,
+        unpinned
+      ),
+  )
 import CLC.Stackage.Runner.Env
   ( RunnerEnv
       ( MkRunnerEnv,
@@ -51,7 +59,12 @@ mkRunnerEnv = do
     MkRunnerEnv
       { buildEnv,
         cache = Nothing,
-        completePackageSet = NE.toList buildEnv.packagesToBuild,
+        completePackageSet =
+          MkPackageSet
+            { extraPins = [],
+              packageList = NE.toList buildEnv.packagesToBuild,
+              unpinned = []
+            },
         cabalUpdate = False,
         cacheEnabled = True,
         cleanup = True,

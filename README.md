@@ -76,7 +76,7 @@ Because we build with `nightly` and are at the mercy of cabal's constraint solve
 
   - `p` requires a new system dependency (e.g. a C library).
   - `p` is an executable.
-  - `p` depends on a package in [./excluded_pkgs.jsonc](excluded_pkgs.jsonc).
+  - `p` depends on an excluded package in [./package_index.jsonc](package_index.jsonc).
 
 - A cabal flag is set in a way that breaks the build. For example, our snapshot requires that the `bson` library does *not* have its `_old-network` flag set, as this will cause a build error with our version of `network`. This flag is automatic, so we have to force it in `generated/cabal.project` with `constraints: bson -_old-network`.
 
@@ -95,7 +95,7 @@ We attempt to mitigate such issues by:
 
 Nevertheless, it is still possible for issues to slip through. When a package `p` fails to build for some reason, we should first:
 
-- Verify that `p` is not in `excluded_pkgs.jsonc`. If it is, nightly probably pulled in some new reverse-dependency `q` that should be added to `excluded_pkgs.jsonc`.
+- Verify that `p` is not in `package_index.excluded`. If it is, nightly probably pulled in some new reverse-dependency `q` that should be added to `package_index.excluded`.
 
 - Verify that `p` does not have cabal flags that can affect dependencies / API.
 
@@ -103,9 +103,9 @@ Nevertheless, it is still possible for issues to slip through. When a package `p
 
 In general, user mitigations for solver / build problems include:
 
-- Adding `p` to `excluded_pkgs.jsonc`. Note that `p` will still be built if it is a (transitive) dependency of some other package in the snapshot, but will not have its exact bounds written to `cabal.project.local`.
+- Adding `p` to `package_index.excluded`. Note that `p` will still be built if it is a (transitive) dependency of some other package in the snapshot, but will not have its exact bounds written to `cabal.project.local`.
 
-- Manually downloading a snapshot (e.g. `https://www.stackage.org/nightly/cabal.config`), changing / removing the offending package(s), and supplying the file with the `--snapshot-path` param. Like `excluded_pkgs.jsonc`, take care that the problematic package is not a (transitive) dependency of something in the snapshot.
+- Manually downloading a snapshot (e.g. `https://www.stackage.org/nightly/cabal.config`), changing / removing the offending package(s), and supplying the file with the `--snapshot-path` param. Like `package_index.jsonc`, take care that the problematic package is not a (transitive) dependency of something in the snapshot.
 
 - Adding constraints to `generated/cabal.project` e.g. flags or version constraints like `constraints: filepath > 1.5`.
 

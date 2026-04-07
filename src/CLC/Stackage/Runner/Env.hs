@@ -28,6 +28,7 @@ import CLC.Stackage.Builder.Env
       ),
   )
 import CLC.Stackage.Builder.Env qualified as Builder.Env
+import CLC.Stackage.Parser (PackageSet (packageList))
 import CLC.Stackage.Parser qualified as Parser
 import CLC.Stackage.Runner.Args
   ( Args (snapshotPath),
@@ -43,7 +44,7 @@ import CLC.Stackage.Runner.Report qualified as Report
 import CLC.Stackage.Utils.Exception qualified as Ex
 import CLC.Stackage.Utils.IO qualified as IO
 import CLC.Stackage.Utils.Logging qualified as Logging
-import CLC.Stackage.Utils.Package (Package (MkPackage, name, version))
+import CLC.Stackage.Utils.Package (Package)
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
 import Control.Monad (join, when)
@@ -61,7 +62,7 @@ import System.Directory.OsPath qualified as Dir
 import System.Exit (ExitCode (ExitSuccess))
 import System.OsPath (osp)
 import System.OsPath qualified as OsP
-import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (.), (<$>), (<>))
+import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (.), (<>))
 
 -- | Args used for building all packages.
 data RunnerEnv = MkRunnerEnv
@@ -80,7 +81,7 @@ data RunnerEnv = MkRunnerEnv
     -- | The complete package set from stackage. This is used to write the
     -- cabal.project.local's constraint section, to ensure we always use the
     -- same transitive dependencies.
-    completePackageSet :: [Package],
+    completePackageSet :: PackageSet,
     -- | Whether to retry packages that failed.
     retryFailures :: Bool,
     -- | Start time.
@@ -144,10 +145,9 @@ setup hLoggerRaw modifyPackages = do
   (completePackageSet, pkgsList) <- case cache of
     Nothing -> do
       -- if no cache exists, query stackage
-      pkgsResponses <- Parser.getPackageList hLogger cliArgs.snapshotPath
-      let completePackageSet = responseToPkgs <$> pkgsResponses
-          pkgs = modifyPackages completePackageSet
-      pure (completePackageSet, pkgs)
+      packageSet <- Parser.getPackageList hLogger cliArgs.snapshotPath
+      let pkgs = modifyPackages packageSet.packageList
+      pure (packageSet, pkgs)
     Just oldResults -> do
       -- cache exists, use it rather than stackage
       oldFailures <-
@@ -164,7 +164,11 @@ setup hLoggerRaw modifyPackages = do
           untested = oldResults.untested
           toTest = Set.union untested oldFailures
 
-      pure (Set.toList completePackageSet, Set.toList toTest)
+      -- Even though we read the packages from the cache, we still want to
+      -- get the packageSet, for writing the cabal.project.local constraints.
+      packageSet <- Parser.packageListToSet hLogger (Set.toList completePackageSet)
+
+      pure (packageSet, Set.toList toTest)
 
   packagesToBuild <- case pkgsList of
     (p : ps) -> pure (p :| ps)
@@ -206,12 +210,6 @@ setup hLoggerRaw modifyPackages = do
         retryFailures = cliArgs.retryFailures,
         startTime
       }
-  where
-    responseToPkgs p =
-      MkPackage
-        { name = p.name,
-          version = p.version
-        }
 
 -- | Prints summary and writes results to disk.
 teardown :: RunnerEnv -> IO ()

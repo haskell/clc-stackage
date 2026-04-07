@@ -480,7 +480,7 @@ parseSnapshotPath =
                   "https://www.stackage.org/<snapshot>/cabal.config i.e. each ",
                   "line should be '<pkg> ==<vers>' e.g. 'lens ==5.3.4'. Note ",
                   "that the snapshot is still filtered according to ",
-                  "excluded_pkgs.jsonc."
+                  "package_index.jsonc."
                 ]
           ]
       )
