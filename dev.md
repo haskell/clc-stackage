@@ -81,9 +81,7 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
 
 2. Update `ghc-version` in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
 
-3. Update functional tests as needed i.e. exact package versions in `*golden` and `test/functional/snapshot.txt`.
-
-4. Optional: Update nix:
+3. Optional: Update nix:
 
     - Inputs (`nix flake update`).
     - GHC: Update the `compiler = pkgs.haskell.packages.ghc<vers>;` line.
@@ -91,7 +89,7 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
 
     This job builds everything with `--dry-run`, so its success is a useful proxy for `clc-stackage`'s health. In other words, if the nix job fails, there is almost certainly a general issue (i.e. either a package should be excluded or new system dep is required), but if it succeeds, the package set is in pretty good shape (there may still be sporadic issues e.g. a package does not properly declare its system dependencies at config time).
 
-5. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
+4. Optional: Update `clc-stackage.cabal`'s dependencies (i.e. `cabal outdated`).
 
 ### Verifying snapshot
 
