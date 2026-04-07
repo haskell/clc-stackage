@@ -17,7 +17,7 @@ import CLC.Stackage.Runner.Env qualified as Env
 import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.Package (Package)
 import Control.Exception (bracket, throwIO)
-import Control.Monad (unless, when)
+import Control.Monad (when)
 import Data.Foldable (for_)
 import Data.IORef (readIORef)
 import System.Exit (ExitCode (ExitFailure))
@@ -48,7 +48,7 @@ runModifyPackages hLogger modifyPackages = withHiddenInput $ do
     -- write the entire package set to the cabal.project.local's constraints
     Writer.writeCabalProjectLocal env.completePackageSet
 
-    unless env.noCabalUpdate $ Builder.cabalUpdate buildEnv
+    when env.cabalUpdate $ Builder.cabalUpdate buildEnv
 
     Logging.putTimeInfoStr buildEnv.hLogger "Starting build(s)"
 

@@ -23,11 +23,11 @@ import CLC.Stackage.Runner.Env
   ( RunnerEnv
       ( MkRunnerEnv,
         buildEnv,
+        cabalUpdate,
         cache,
+        cacheEnabled,
+        cleanup,
         completePackageSet,
-        noCabalUpdate,
-        noCache,
-        noCleanup,
         retryFailures,
         startTime
       ),
@@ -51,9 +51,9 @@ mkRunnerEnv = do
       { buildEnv,
         cache = Nothing,
         completePackageSet = NE.toList buildEnv.packagesToBuild,
-        noCabalUpdate = True,
-        noCache = False,
-        noCleanup = False,
+        cabalUpdate = False,
+        cacheEnabled = True,
+        cleanup = True,
         retryFailures = False,
         startTime = mkLocalTime
       }

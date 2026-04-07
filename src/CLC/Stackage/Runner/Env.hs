@@ -46,7 +46,7 @@ import CLC.Stackage.Utils.Logging qualified as Logging
 import CLC.Stackage.Utils.Package (Package (MkPackage, name, version))
 import CLC.Stackage.Utils.Paths qualified as Paths
 import Control.Exception (throwIO)
-import Control.Monad (join, unless, when)
+import Control.Monad (join, when)
 import Data.Bool (Bool (False, True), not)
 import Data.Foldable (Foldable (foldl'))
 import Data.IORef (newIORef, readIORef)
@@ -67,20 +67,20 @@ import Prelude (IO, Monad ((>>=)), mconcat, pure, show, ($), (.), (<$>), (<>))
 data RunnerEnv = MkRunnerEnv
   { -- | Environment used in building.
     buildEnv :: BuildEnv,
+    -- | Enables the 'cabal update' step.
+    cabalUpdate :: Bool,
     -- | Status from previous run.
     cache :: Maybe Results,
+    -- | Enables the cache, which saves the outcome of a run in a json file.
+    -- The cache is used for resuming a run that was interrupted.
+    cacheEnabled :: Bool,
+    -- | If disabled, we do not revert the cabal file at the end (i.e. we
+    -- leave the last attempted build).
+    cleanup :: Bool,
     -- | The complete package set from stackage. This is used to write the
     -- cabal.project.local's constraint section, to ensure we always use the
     -- same transitive dependencies.
     completePackageSet :: [Package],
-    -- | Disables the 'cabal update' step.
-    noCabalUpdate :: Bool,
-    -- | Disables the cache, which otherwise saves the outcome of a run in a
-    -- json file. The cache is used for resuming a run that was interrupted.
-    noCache :: Bool,
-    -- | If we do not revert the cabal file at the end (i.e. we leave the
-    -- last attempted build).
-    noCleanup :: Bool,
     -- | Whether to retry packages that failed.
     retryFailures :: Bool,
     -- | Start time.
@@ -136,9 +136,9 @@ setup hLoggerRaw modifyPackages = do
   failuresRef <- newIORef Set.empty
 
   cache <-
-    if cliArgs.noCache
-      then pure Nothing
-      else Report.readCache hLogger
+    if cliArgs.cache
+      then Report.readCache hLogger
+      else pure Nothing
 
   -- (entire set, packages to build)
   (completePackageSet, pkgsList) <- case cache of
@@ -199,9 +199,9 @@ setup hLoggerRaw modifyPackages = do
       { buildEnv,
         cache,
         completePackageSet,
-        noCabalUpdate = cliArgs.noCabalUpdate,
-        noCache = cliArgs.noCache,
-        noCleanup = cliArgs.noCleanup,
+        cabalUpdate = cliArgs.cabalUpdate,
+        cacheEnabled = cliArgs.cache,
+        cleanup = cliArgs.cleanup,
         retryFailures = cliArgs.retryFailures,
         startTime
       }
@@ -216,7 +216,7 @@ setup hLoggerRaw modifyPackages = do
 teardown :: RunnerEnv -> IO ()
 teardown env = do
   endTime <- env.buildEnv.hLogger.getLocalTime
-  unless env.noCleanup $ do
+  when env.cleanup $ do
     Dir.removeFile Paths.generatedCabalPath
     Dir.removeFile Paths.generatedCabalProjectLocalPath
 
@@ -227,7 +227,7 @@ teardown env = do
           (Logging.formatLocalTime env.startTime)
           (Logging.formatLocalTime endTime)
 
-  unless env.noCache (updateCache env results)
+  when env.cacheEnabled (updateCache env results)
 
   Report.saveReport report
 

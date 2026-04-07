@@ -64,19 +64,19 @@ data Args = MkArgs
     cabalOpts :: [String],
     -- | Optional path to cabal executable.
     cabalPath :: Maybe OsPath,
+    -- | If true, the 'cabal update' step is run.
+    cabalUpdate :: Bool,
+    -- | Enables the cache, which saves the outcome of a run in a json file.
+    -- The cache is used for resuming a run that was interrupted.
+    cache :: Bool,
+    -- | If true, leaves the last generated cabal files.
+    cleanup :: Bool,
     -- | Determines if we color the logs. If 'Nothing', attempts to detect
     -- if colors are supported.
     colorLogs :: ColorLogs,
     -- | If true, the first group that fails to completely build stops
     -- clc-stackage.
     groupFailFast :: Bool,
-    -- | If true, the 'cabal update' step is skipped.
-    noCabalUpdate :: Bool,
-    -- | Disables the cache, which otherwise saves the outcome of a run in a
-    -- json file. The cache is used for resuming a run that was interrupted.
-    noCache :: Bool,
-    -- | If true, leaves the last generated cabal files.
-    noCleanup :: Bool,
     -- | If true, the first package that fails _within_ a package group will
     -- cause the entire group to fail.
     packageFailFast :: Bool,
@@ -188,11 +188,11 @@ getArgs = OA.execParser parserInfoArgs
 parseCliArgs :: Parser Args
 parseCliArgs =
   ( do
-      ~(cabalGlobalOpts, cabalOpts, cabalPath, noCabalUpdate) <- parseCabalGroup
-      ~(noCache, retryFailures) <- parseCacheGroup
+      ~(cabalGlobalOpts, cabalOpts, cabalPath, cabalUpdate) <- parseCabalGroup
+      ~(cache, retryFailures) <- parseCacheGroup
       ~(groupFailFast, packageFailFast) <- parseFailuresGroup
       ~(batch, printPackageSet, snapshotPath) <- parseMiscGroup
-      ~(colorLogs, noCleanup, writeLogs) <- parseOutputGroup
+      ~(cleanup, colorLogs, writeLogs) <- parseOutputGroup
 
       pure $
         MkArgs
@@ -200,11 +200,11 @@ parseCliArgs =
             cabalGlobalOpts,
             cabalOpts,
             cabalPath,
+            cabalUpdate,
+            cache,
+            cleanup,
             colorLogs,
             groupFailFast,
-            noCabalUpdate,
-            noCache,
-            noCleanup,
             packageFailFast,
             printPackageSet,
             retryFailures,
@@ -220,12 +220,12 @@ parseCliArgs =
           <$> parseCabalGlobalOpts
           <*> parseCabalOpts
           <*> parseCabalPath
-          <*> parseNoCabalUpdate
+          <*> parseCabalUpdate
 
     parseCacheGroup =
       OA.parserOptionGroup "Cache options:" $
         (,)
-          <$> parseNoCache
+          <$> parseCache
           <*> parseRetryFailures
 
     parseFailuresGroup =
@@ -244,8 +244,8 @@ parseCliArgs =
     parseOutputGroup =
       OA.parserOptionGroup "Output options:" $
         (,,)
-          <$> parseColorLogs
-          <*> parseNoCleanup
+          <$> parseCleanup
+          <*> parseColorLogs
           <*> parseWriteLogs
 
 parseBatch :: Parser (Maybe Int)
@@ -333,72 +333,84 @@ parseColorLogs =
         bad -> fail $ "Expected one of (detect | on | off), received: " <> bad
 
 parseGroupFailFast :: Parser Bool
-parseGroupFailFast =
-  OA.switch
-    ( mconcat
+parseGroupFailFast = mkSwitch opts
+  where
+    opts =
+      mconcat
         [ OA.long "group-fail-fast",
+          OA.value False,
           mkHelp helpTxt
         ]
-    )
-  where
     helpTxt =
       mconcat
-        [ "If true, the first batch group that fails to completely build stops ",
-          "clc-stackage."
+        [ "If on, the first batch group that fails to completely build stops ",
+          "clc-stackage. Defaults to 'off'."
         ]
 
-parseNoCabalUpdate :: Parser Bool
-parseNoCabalUpdate =
-  OA.switch
-    ( mconcat
-        [ OA.long "no-cabal-update",
+parseCabalUpdate :: Parser Bool
+parseCabalUpdate = mkSwitch opts
+  where
+    opts =
+      mconcat
+        [ OA.long "cabal-update",
+          OA.value True,
           mkHelpNoLine helpTxt
         ]
-    )
-  where
-    helpTxt = "If true, skips the 'cabal update' step."
+    helpTxt = "Runs 'cabal update' before building. Defaults to 'on'."
 
-parseNoCache :: Parser Bool
-parseNoCache =
-  OA.switch
-    ( mconcat
-        [ OA.long "no-cache",
+parseCache :: Parser Bool
+parseCache = mkSwitch opts
+  where
+    opts =
+      mconcat
+        [ OA.long "cache",
+          OA.value True,
           mkHelp $
             mconcat
-              [ "Disables the cache. Normally, the outcome of a run is saved ",
-                "to a json cache. This is useful for resuming a run that was ",
-                "interrupted (e.g. CTRL-C). The next run will fetch the ",
-                "packages to build from the cache."
+              [ "Saves the outcome of a run to a json cache, useful for resuming ",
+                "a run that was interrupted (e.g. CTRL-C). The next run will fetch ",
+                "the packages to build from the cache. Defaults to 'on'."
               ]
         ]
-    )
 
-parseNoCleanup :: Parser Bool
-parseNoCleanup =
-  OA.switch
-    ( mconcat
-        [ OA.long "no-cleanup",
-          mkHelp "Will not remove the generated cabal files after exiting."
+parseCleanup :: Parser Bool
+parseCleanup = mkSwitch opts
+  where
+    opts =
+      mconcat
+        [ OA.long "cleanup",
+          OA.value True,
+          mkHelp "Removes generated files after finishing. Defaults to 'on'."
         ]
-    )
 
 parsePackageFailFast :: Parser Bool
-parsePackageFailFast =
-  OA.switch
-    ( mconcat
+parsePackageFailFast = mkSwitch opts
+  where
+    opts =
+      mconcat
         [ OA.long "package-fail-fast",
+          OA.value False,
           mkHelpNoLine helpTxt
         ]
-    )
-  where
     helpTxt =
       mconcat
-        [ "If true, the first package that fails _within_ a batch group ",
+        [ "If on, the first package that fails _within_ a batch group ",
           "will cause the entire group to fail. We then move to the next ",
-          "group, as normal. The default (off) behavior is equivalent to ",
+          "group, as normal. The default 'off' behavior is equivalent to ",
           "cabal's --keep-going)."
         ]
 
+-- Notice that unlike other on/off switches, this is an actual flag
+-- (--print-package-set) vs. an on/off option (--print-package-set (on | off)).
+--
+-- We have this exception because this isn't really an on/off switch but
+-- rather an alternative command which bypasses the build entirely. This
+-- would make more sense using optparse's command syntax, except that would
+-- require normal usage to also have some command (e.g. build), which doesn't
+-- seem worth it for the normal, happy path.
+--
+-- Ideally this would be a command and normal usage would be a "default command",
+-- i.e. require no actual command, but optparse has no such notion.
 parsePrintPackageSet :: Parser Bool
 parsePrintPackageSet =
   OA.switch
@@ -415,13 +427,18 @@ parsePrintPackageSet =
         ]
 
 parseRetryFailures :: Parser Bool
-parseRetryFailures =
-  OA.switch
-    ( mconcat
+parseRetryFailures = mkSwitch opts
+  where
+    opts =
+      mconcat
         [ OA.long "retry-failures",
-          mkHelpNoLine "Retries failures from the cache. Incompatible with --no-cache. "
+          OA.value False,
+          mkHelpNoLine $
+            mconcat
+              [ "Retries failures from the cache. Incompatible with '--cache off'. ",
+                "Defaults to 'off'."
+              ]
         ]
-    )
 
 parseSnapshotPath :: Parser (Maybe OsPath)
 parseSnapshotPath =
@@ -561,3 +578,21 @@ cwdPathsCompleter = OAC.mkCompleter $ \word -> do
 
 tryIO :: IO a -> IO (Either IOException a)
 tryIO = try
+
+-- Makes a switch that takes '(on | off)'. For consistency, this should be
+-- preferred for any on/off switch, rather than a normal flag
+-- (e.g. --foo (on | off) vs. --foo).
+mkSwitch :: Mod OptionFields Bool -> Parser Bool
+mkSwitch opts = OA.option readSwitch opts'
+  where
+    opts' =
+      OA.metavar "(on | off)"
+        <> OA.completeWith ["on", "off"]
+        <> opts
+
+readSwitch :: ReadM Bool
+readSwitch =
+  OA.str >>= \case
+    "off" -> pure False
+    "on" -> pure True
+    other -> fail $ "Expected (on | off), received: " ++ other

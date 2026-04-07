@@ -161,10 +161,13 @@ runGolden getNoCleanup params =
 
     -- While NOTE: [Skipping cleanup] will prevent the test cleanup from running,
     -- the clc-stackage also performs a cleanup. Thus if no cleanup is desired
-    -- (NO_CLEANUP is set), we also need to pass the --no-cleanup arg to the
+    -- (NO_CLEANUP is set), we also need to pass the '--cleanup off' arg to the
     -- exe.
     noCleanup <- getNoCleanup
-    let noCleanupArgs = ["--no-cleanup" | noCleanup]
+    let noCleanupArgs =
+          if noCleanup
+            then []
+            else ["--cleanup", "off"]
         finalArgs = args' ++ noCleanupArgs
 
     logs <- withArgs finalArgs params.runner
@@ -245,7 +248,8 @@ runGolden getNoCleanup params =
     args' =
       "--color-logs"
         : "off"
-        : "--no-cabal-update"
+        : "--cabal-update"
+        : "off"
         : params.args
 
     baseTestPath =
