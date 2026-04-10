@@ -56,6 +56,15 @@
       "cutter",
       "dbcleaner",
       "dbus-menu", // gtk-3
+      // Nightly deriving-trans (0.11.0.0) is only compatible with the
+      // latest mtl (2.3.2) at the _minor_ level i.e. lower versions fail.
+      // This is a problem if we want to allow usage with multiple GHC minors,
+      // as mtl is a boot package, hence we do not pin deriving-trans.
+      //
+      // Once boot packages are re-installable with ghc, we can remove mtl and
+      // the rest from the 'unpinned' key here, and then we be able to allow
+      // deriving-trans again.
+      "deriving-trans",
       "diagrams-svg",
       "discount",
       "dl-fedora",
