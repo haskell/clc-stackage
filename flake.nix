@@ -85,6 +85,7 @@
         libsysprof-capture # glib-stopgap
         sqlite # simplest-sqlite
         systemdMinimal # hidapi requires udev
+        uhd # uhd
         util-linux # simple-pango requires mount
         xorg.libXdmcp # simple-cairo
         xz # lzma
