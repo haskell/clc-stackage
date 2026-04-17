@@ -184,6 +184,9 @@
       "hasql-th",
       "hasql-transaction",
       "haxr",
+      // Fails on CI with:
+      //   "<no location info>: error: Prelude.!!: index too large"
+      "horde-ad",
       "headroom", // segfault
       "hinotify",
       "hkgr",
