@@ -16,5 +16,14 @@ allow-older: *:*
 constraints: bson -_old-network
 constraints: hlint +ghc-lib
 constraints: ghc-lib-parser-ex -auto
+-- There are two valid configurations for mysql-haskell:
+--
+--   1. crypton < 1.1, memory, and -crypton-1-1.
+--   2. crypton >= 1.1, ram, and +crypton-1-1.
+--
+-- The crypton in the snapshot is < 1.1, hence we need to explicitly set this
+-- automatic flag to false. Once the snapshot's crypton is recent enough, we
+-- can probably remove this.
+constraints: mysql-haskell -crypton-1-1
 constraints: path +os-string
 constraints: stylish-haskell +ghc-lib
