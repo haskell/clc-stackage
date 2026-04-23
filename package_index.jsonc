@@ -306,6 +306,7 @@
       "postgresql-schema",
       "postgresql-simple",
       "postgresql-simple-url",
+      "ppad-bip39", // text-icu
       "primecount",
       "profiterole",
       "proto-lens-protobuf-types",
