@@ -351,6 +351,7 @@
       "stack-all",
       "stack-clean-old",
       "stack-templatizer",
+      "streamly-examples", // exe
       "stringprep",
       "SVGFonts",
       "swizzle",
