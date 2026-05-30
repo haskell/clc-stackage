@@ -42,6 +42,7 @@
       "cabal-sort",
       "cabal2nix",
       "calendar-recycling",
+      "chemical-equation", // exe
       "Clipboard",
       "coinor-clp",
       "comfort-blas",
@@ -301,6 +302,8 @@
       "place-cursor-at",
       "pontarius-xmpp",
       "pontarius-xmpp-extras",
+      "portmidi-utility", // exe
+      "PortMidi", // requires C lib asound
       "postgresql-libpq-notify",
       "postgresql-migration",
       "postgresql-schema",
@@ -396,6 +399,7 @@
       "youtube",
       "zeromq4-haskell",
       "zeromq4-patterns",
+      "zip2tar", // exe
       "zot",
       "ztail"
     ],
