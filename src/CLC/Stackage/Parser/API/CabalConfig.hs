@@ -15,6 +15,7 @@ import CLC.Stackage.Parser.API.Common
       ),
     StackageException (MkStackageException),
     StackageResponse (MkStackageResponse, ghc, packages, snapshot),
+    Url (unUrl),
     getStatusCode,
   )
 import CLC.Stackage.Utils.Exception qualified as Ex
@@ -34,8 +35,8 @@ import Network.HTTP.Client qualified as HttpClient
 
 -- | Given http manager and snapshot string, queries the cabal config
 -- endpoint. This is intended as a backup, for when the primary endpoint fails.
-getStackage :: Manager -> String -> IO StackageResponse
-getStackage manager stackageSnapshot = do
+getStackage :: Manager -> Url -> IO StackageResponse
+getStackage manager stackageUrl = do
   req <- getRequest
   HttpClient.withResponse req manager readStackageResponse
   where
@@ -44,7 +45,7 @@ getStackage manager stackageSnapshot = do
       let bodyReader = HttpClient.responseBody res
           status = HttpClient.responseStatus res
           statusCode = getStatusCode res
-          mkEx = MkStackageException stackageSnapshot
+          mkEx = MkStackageException stackageConfigUrl
 
       when (statusCode /= 200) $
         throwIO $
@@ -63,14 +64,11 @@ getStackage manager stackageSnapshot = do
       pure $ parseCabalConfig bodyTxt
 
     getRequest :: IO Request
-    getRequest = HttpClient.parseRequest stackageUrl
+    getRequest = HttpClient.parseRequest stackageConfigUrl.unUrl
 
     -- Url for the stackage snapshot.
-    stackageUrl :: String
-    stackageUrl =
-      "https://stackage.org/"
-        <> stackageSnapshot
-        <> "/cabal.config"
+    stackageConfigUrl :: Url
+    stackageConfigUrl = stackageUrl <> "/cabal.config"
 
 parseCabalConfig :: Text -> StackageResponse
 parseCabalConfig txt =

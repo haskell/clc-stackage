@@ -22,14 +22,14 @@ tests =
 testCabalConfigEndpoint :: TestTree
 testCabalConfigEndpoint = testCase desc $ do
   manager <- TLS.newTlsManager
-  eval =<< CabalConfig.getStackage manager API.stackageSnapshot
+  eval =<< CabalConfig.getStackage manager API.defaultSnapshotUrl
   where
     desc = "Queries stackage cabal.config endpoint"
 
 testJsonEndpoint :: TestTree
 testJsonEndpoint = testCase desc $ do
   manager <- TLS.newTlsManager
-  eval =<< JSON.getStackage manager API.stackageSnapshot
+  eval =<< JSON.getStackage manager API.defaultSnapshotUrl
   where
     desc = "Queries stackage json endpoint"
 

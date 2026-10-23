@@ -45,9 +45,9 @@ import Text.ParserCombinators.ReadP qualified as ReadP
 
 -- | Retrieves the 'PackageSet', based on
 -- 'CLC.Stackage.Parser.API.stackageUrl'.
-getPackageList :: Logging.Handle -> Maybe OsPath -> IO PackageSet
-getPackageList hLogger msnapshotPath = do
-  response <- getStackageResponse hLogger msnapshotPath
+getPackageList :: Logging.Handle -> Maybe OsPath -> Maybe String -> IO PackageSet
+getPackageList hLogger msnapshotPath msnapshotUrl = do
+  response <- getStackageResponse hLogger msnapshotPath msnapshotUrl
   packageListToSet hLogger response.packages
 
 -- | Given a list of packages, returns a 'PackageSet' i.e. all constraints
@@ -57,9 +57,9 @@ packageListToSet hLogger packages =
   getPackageListByOs hLogger packages OS.currentOs
 
 -- | Prints the package list to a file.
-printPackageList :: Logging.Handle -> Maybe OsPath -> Maybe Os -> IO ()
-printPackageList hLogger msnapshotPath mOs = do
-  response <- getStackageResponse hLogger msnapshotPath
+printPackageList :: Logging.Handle -> Maybe OsPath -> Maybe String -> Maybe Os -> IO ()
+printPackageList hLogger msnapshotPath msnapshotUrl mOs = do
+  response <- getStackageResponse hLogger msnapshotPath msnapshotUrl
   case mOs of
     Just os -> printOsList response os
     Nothing -> for_ [minBound .. maxBound] (printOsList response)
@@ -134,10 +134,10 @@ getPackageListByOs hLogger packageList os = do
       Osx -> (.osx)
       Windows -> (.windows)
 
-getStackageResponse :: Logging.Handle -> Maybe OsPath -> IO StackageResponse
-getStackageResponse hLogger msnapshotPath = do
+getStackageResponse :: Logging.Handle -> Maybe OsPath -> Maybe String -> IO StackageResponse
+getStackageResponse hLogger msnapshotPath msnapshotUrl = do
   response <- case msnapshotPath of
-    Nothing -> API.getStackage hLogger
+    Nothing -> API.getStackage hLogger msnapshotUrl
     Just snapshotPath ->
       CabalConfig.parseCabalConfig
         <$> IO.readFileUtf8 snapshotPath

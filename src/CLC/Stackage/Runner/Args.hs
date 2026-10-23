@@ -91,6 +91,8 @@ data Args = MkArgs
     -- | Optional path to snapshot file. If given, we use the file's contents
     -- as the package set, rather than the stackage server.
     snapshotPath :: Maybe OsPath,
+    -- | Optional snapshot url, overrides default.
+    snapshotUrl :: Maybe String,
     -- | Determines what logs to write.
     writeLogs :: Maybe WriteLogs
   }
@@ -195,7 +197,7 @@ parseCliArgs =
       ~(cabalGlobalOpts, cabalOpts, cabalPath, cabalUpdate) <- parseCabalGroup
       ~(cache, retryFailures) <- parseCacheGroup
       ~(groupFailFast, packageFailFast) <- parseFailuresGroup
-      ~(batch, batchIndex, printPackageSet, snapshotPath) <- parseMiscGroup
+      ~(batch, batchIndex, printPackageSet, snapshotPath, snapshotUrl) <- parseMiscGroup
       ~(cleanup, colorLogs, writeLogs) <- parseOutputGroup
 
       pure $
@@ -214,6 +216,7 @@ parseCliArgs =
             printPackageSet,
             retryFailures,
             snapshotPath,
+            snapshotUrl,
             writeLogs
           }
   )
@@ -241,11 +244,12 @@ parseCliArgs =
 
     parseMiscGroup =
       OA.parserOptionGroup "Misc options:" $
-        (,,,)
+        (,,,,)
           <$> parseBatch
           <*> parseBatchIndex
           <*> parsePrintPackageSet
           <*> parseSnapshotPath
+          <*> parseSnapshotUrl
 
     parseOutputGroup =
       OA.parserOptionGroup "Output options:" $
@@ -419,7 +423,7 @@ parsePackageFailFast = mkSwitch opts
         [ "If on, the first package that fails _within_ a batch group ",
           "will cause the entire group to fail. We then move to the next ",
           "group, as normal. The default 'off' behavior is equivalent to ",
-          "cabal's --keep-going)."
+          "cabal's --keep-going."
         ]
 
 -- Notice that unlike other on/off switches, this is an actual flag
@@ -471,7 +475,7 @@ parseSnapshotPath =
           [ OA.long "snapshot-path",
             OA.metavar "PATH",
             OA.completer compgenCwdPathsCompleter,
-            mkHelpNoLine $
+            mkHelp $
               mconcat
                 [ "Optional path to snapshot file. This overrides ",
                   "the stackage snapshot; that is, we use the file's contents, ",
@@ -480,7 +484,26 @@ parseSnapshotPath =
                   "https://www.stackage.org/<snapshot>/cabal.config i.e. each ",
                   "line should be '<pkg> ==<vers>' e.g. 'lens ==5.3.4'. Note ",
                   "that the snapshot is still filtered according to ",
-                  "package_index.jsonc."
+                  "package_index.jsonc. Overrides --snapshot-url."
+                ]
+          ]
+      )
+
+parseSnapshotUrl :: Parser (Maybe String)
+parseSnapshotUrl =
+  OA.optional $
+    OA.option
+      OA.str
+      ( mconcat
+          [ OA.long "snapshot-url",
+            OA.metavar "(lts-VERS | nightly-DATE | URL)",
+            OA.completeWith ["lts", "nightly"],
+            mkHelpNoLine $
+              mconcat
+                [ "Optional snapshot url that overrides the built-in default. ",
+                  "Can be a snapshot 'lts-24.38', 'nightly-2026-04-23', which ",
+                  "is assumed to refer to https://www.stackage.org/, or an ",
+                  "arbitrary URL, which is interpreted literally."
                 ]
           ]
       )

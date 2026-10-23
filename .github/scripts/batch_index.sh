@@ -5,6 +5,11 @@ set -e
 # total time reasonable.
 batch_index=$1
 
+url=""
+if [[ -n "$2" ]]; then
+  url="--snapshot-url=$2"
+fi
+
 source .github/scripts/install.sh
 
 if [[ -d output ]]; then
@@ -19,7 +24,8 @@ clc-stackage \
   --batch 200 \
   --batch-index $batch_index \
   --cabal-options="--semaphore" \
-  --cleanup off
+  --cleanup off \
+  $url
 
 ec=$?
 

@@ -1,69 +1,15 @@
-name: ci
+name: runner
 on:
-  push:
-    branches:
-      - master
-
-  pull_request:
-    branches:
-      - master
-
-  schedule:
-    # Every day at 00:00 UTC.
-    #
-    # https://crontab.guru
-    - cron: '0 0 * * *'
+  workflow_call:
+    inputs:
+      snapshot:
+        required: true
+        type: string
 
   workflow_dispatch:
 jobs:
-  cabal:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - "macos-latest"
-          - "ubuntu-latest"
-          - "windows-latest"
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: haskell-actions/setup@v2
-        with:
-          # Should be the current stackage nightly, though this will likely go
-          # out-of-date eventually, until a problem is reported.
-          ghc-version: "9.12"
-      - name: Configure
-        run: |
-          cabal configure --enable-tests --ghc-options -Werror
-
-      - name: Build executable
-        run: cabal build exe:clc-stackage
-
-      - name: Unit Tests
-        id: unit
-        run: cabal test unit
-
-      - name: Functional Tests
-        id: functional
-        # We want to run these tests even if the unit tests fail, because
-        # it is useful to know if e.g. the unit tests fail due to one
-        # stackage endpoint failing, but the functional tests pass due to
-        # a backup working.
-        if: always()
-        shell: bash
-        run: NO_CLEANUP=1 cabal test functional
-
-      - name: Print functional failures
-        if: ${{ failure() && steps.functional.conclusion == 'failure' }}
-        shell: bash
-        run: .github/scripts/print_logs.sh
   dry-run:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - "ubuntu-latest"
-    runs-on: ${{ matrix.os }}
+    runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
 
@@ -73,8 +19,8 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Dry run
-        run: nix develop .#ci -Lv -c bash -c '.github/scripts/dry_run.sh'
+      - name: Dry run ${{ inputs.snapshot }}
+        run: nix develop .#ci -Lv -c bash -c '.github/scripts/dry_run.sh ${{ inputs.snapshot }}'
 
       # Upload installed binary so that build-batch does not need to re-install
       # it.
@@ -147,4 +93,4 @@ jobs:
           path: ./bin
 
       - name: Build
-        run: nix develop .#ci -Lv -c bash -c '.github/scripts/batch_index.sh ${{ matrix.index }}'
+        run: nix develop .#ci -Lv -c bash -c '.github/scripts/batch_index.sh ${{ matrix.index }} ${{ inputs.snapshot }}'
