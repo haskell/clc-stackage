@@ -106,7 +106,7 @@ setup hLoggerRaw modifyPackages = do
 
   when cliArgs.printPackageSet $ do
     Logging.putTimeInfoStr hLogger "Printing package set"
-    Parser.printPackageList hLogger cliArgs.snapshotPath Nothing
+    Parser.printPackageList hLogger cliArgs.snapshotPath cliArgs.snapshotUrl Nothing
     throwIO ExitSuccess
 
   -- Set up build args for cabal, filling in missing defaults
@@ -145,7 +145,7 @@ setup hLoggerRaw modifyPackages = do
   (completePackageSet, pkgsList) <- case cache of
     Nothing -> do
       -- if no cache exists, query stackage
-      packageSet <- Parser.getPackageList hLogger cliArgs.snapshotPath
+      packageSet <- Parser.getPackageList hLogger cliArgs.snapshotPath cliArgs.snapshotUrl
       let pkgs = modifyPackages packageSet.packageList
       pure (packageSet, pkgs)
     Just oldResults -> do

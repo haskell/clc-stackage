@@ -1,3 +1,8 @@
+url=""
+if [[ -n "$1" ]]; then
+  url="--snapshot-url=$1"
+fi
+
 source .github/scripts/install.sh
 
 if [[ -d output ]]; then
@@ -7,7 +12,7 @@ fi
 echo "*** Building all with --dry-run ***"
 
 set +e
-clc-stackage --batch 200 --cabal-options="--dry-run"
+clc-stackage --batch 200 --cabal-options="--dry-run" $url
 
 ec=$?
 

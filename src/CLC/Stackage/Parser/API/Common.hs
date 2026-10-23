@@ -8,6 +8,7 @@ module CLC.Stackage.Parser.API.Common
     ExceptionReason (..),
 
     -- * Misc
+    Url (..),
     getStatusCode,
   )
 where
@@ -19,6 +20,7 @@ import Control.Exception
     SomeException,
   )
 import Data.ByteString (ByteString)
+import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import GHC.Generics (Generic)
@@ -52,7 +54,7 @@ data ExceptionReason
 
 -- | General network exception.
 data StackageException = MkStackageException
-  { snapshot :: String,
+  { snapshot :: Url,
     reason :: ExceptionReason
   }
   deriving stock (Show)
@@ -65,7 +67,7 @@ instance Exception StackageException where
           then
             mconcat
               [ "Received 404 for snapshot '",
-                snapshot,
+                snapshot.unUrl,
                 "'. Is the snapshot correct? ",
                 statusMessage status
               ]
@@ -74,14 +76,14 @@ instance Exception StackageException where
               [ "Received ",
                 show $ Status.statusCode status,
                 " for snapshot '",
-                snapshot,
+                snapshot.unUrl,
                 "'. ",
                 statusMessage status
               ]
       ReasonReadBody readBodyEx ->
         mconcat
           [ "Exception reading body for snapshot '",
-            snapshot,
+            snapshot.unUrl,
             "':\n\n",
             displayException readBodyEx
           ]
@@ -111,3 +113,11 @@ instance Exception StackageException where
 
 getStatusCode :: Response body -> Int
 getStatusCode = Status.statusCode . HttpClient.responseStatus
+
+-- | Simple newtype for a url that is parsed from the CLI, before being
+-- handled by http-client. No URL invariants are checked, hence there is
+-- no guarantee this is a valid URL. This type exists merely for
+-- documentation.
+newtype Url = MkUrl {unUrl :: String}
+  deriving stock (Show)
+  deriving newtype (IsString, Monoid, Semigroup)

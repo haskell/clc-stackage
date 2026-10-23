@@ -8,6 +8,7 @@ module CLC.Stackage.Utils.Logging
     putTimeSuccessStr,
     putTimeWarnStr,
     putTimeErrStr,
+    putTimeErrLongStr,
 
     -- ** ANSI Colors
     colorBlue,
@@ -78,6 +79,13 @@ putTimeErrStr hLogger s = do
   hLogger.logStrErrLn $ colorRed hLogger.color $ "[" <> timeStr <> "][Error]   " <> s'
   where
     s' = truncateIfNeeded hLogger.terminalWidth s
+
+putTimeErrLongStr :: Handle -> Text -> IO ()
+putTimeErrLongStr hLogger s = do
+  timeStr <- getLocalTimeString hLogger
+  hLogger.logStrErrLn $ colorRed hLogger.color $ "[" <> timeStr <> "][Error]   " <> s'
+  where
+    s' = truncateIfNeeded 200 s
 
 getLocalTimeString :: Handle -> IO Text
 getLocalTimeString hLogger = formatLocalTime <$> hLogger.getLocalTime

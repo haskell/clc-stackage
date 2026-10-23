@@ -75,13 +75,20 @@ The executable that actually runs. This is a very thin wrapper over `runner`, wh
 
 ## Updating to a new snapshot
 
-`clc-stackage` is based on `nightly` -- which changes automatically -- meaning we do not necessarily have to do anything when a new (minor) snapshot is released. On the other hand, *major* snapshot updates will almost certainly bring in new packages that need to be excluded, so there are some general "update steps" we will want to take:
+While `clc-stackage` is based on `nightly` -- which changes automatically -- we also specify a `stable` snapshot as a backup for when `nightly` runs into build issues e.g. a new package is added that needs to be excluded or have a flag set. This occurs a few times a month. We therefore pick an arbitrary `nightly` snapshot that has many packages in it (generally 3000+). When we do want to update the snapshot -- generally, once per GHC major version update -- there are some general steps we will want to take:
 
-1. Modify [package_index.jsonc](package_index.jsonc) as needed. That is, updating the snapshot major version will probably bring in some new packages that we do not want. The update process is essentially trial-and-error i.e. run `clc-stackage` as normal, and later add any failing packages to `package_index.excluded` that should be excluded.
+1. Update the [stable snapshot date](./.github/workflows/stable.yaml):
 
-2. Update `ghc-version` in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
+    ```yaml
+    # .github/workflows/stable.yaml
+    snapshot: 'nightly-<date>'
+    ```
 
-3. Optional: Update nix:
+2. Modify [package_index.jsonc](package_index.jsonc) as needed. That is, updating the snapshot version will probably bring in some new packages that we do not want. The update process is essentially trial-and-error i.e. run `clc-stackage` as normal, and later add any failing packages to `package_index.excluded` that should be excluded.
+
+3. If this is a major ghc update, update the `ghc-version` in [.github/workflows/build.yaml](.github/workflows/build.yaml).
+
+4. Optional: Update nix:
 
     - Inputs (`nix flake update`).
     - GHC: Update the `compiler = pkgs.haskell.packages.ghc<vers>;` line.
@@ -115,4 +122,4 @@ Note that this only saves files from the _last_ test, so if you want to examine 
 
 > [!TIP]
 >
-> CI has a job `build-batch` which actually builds the entire package set, hence it can be used in place of manual building / testing. Note it takes about an hour to run.
+> CI has workflows `nightly` and `stable` which build the entire package set, hence they can be used in place of manual building / testing. Note they each take about an hour to run.

@@ -7,6 +7,7 @@ where
 import CLC.Stackage.Parser.API.Common
   ( ExceptionReason (ReasonDecodeJson, ReasonReadBody, ReasonStatus),
     StackageException (MkStackageException),
+    Url,
     getStatusCode,
   )
 import CLC.Stackage.Parser.API.Common qualified as Common
@@ -23,8 +24,8 @@ import Network.HTTP.Client qualified as HttpClient
 
 -- | Given http manager and snapshot string, queries the primary json
 -- endpoint.
-getStackage :: Manager -> String -> IO Common.StackageResponse
-getStackage manager stackageSnapshot = do
+getStackage :: Manager -> Url -> IO Common.StackageResponse
+getStackage manager stackageUrl = do
   req <- getRequest
   HttpClient.withResponse req manager readStackageResponse
   where
@@ -33,7 +34,7 @@ getStackage manager stackageSnapshot = do
       let bodyReader = HttpClient.responseBody res
           status = HttpClient.responseStatus res
           statusCode = getStatusCode res
-          mkEx = MkStackageException stackageSnapshot
+          mkEx = MkStackageException stackageUrl
 
       when (statusCode /= 200) $
         throwIO $
@@ -51,17 +52,13 @@ getStackage manager stackageSnapshot = do
     getRequest :: IO Request
     getRequest = updateReq <$> mkReq
       where
-        mkReq = HttpClient.parseRequest stackageUrl
+        mkReq = HttpClient.parseRequest stackageUrl.unUrl
         updateReq r =
           r
             { HttpClient.requestHeaders =
                 [ ("Accept", "application/json;charset=utf-8,application/json")
                 ]
             }
-
-    -- Url for the stackage snapshot.
-    stackageUrl :: String
-    stackageUrl = "https://stackage.org/" <> stackageSnapshot
 
 toSnapshotCommon :: StackageResponse -> Common.StackageResponse
 toSnapshotCommon (MkStackageResponse snapshot pkgs) =

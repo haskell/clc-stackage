@@ -1,0 +1,22 @@
+name: nightly
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+  schedule:
+    # Every day at 00:00 UTC.
+    #
+    # https://crontab.guru
+    - cron: '0 0 * * *'
+
+  workflow_dispatch:
+jobs:
+  trigger-build:
+    uses: ./.github/workflows/runner.yaml
+    with:
+      snapshot: 'nightly'
